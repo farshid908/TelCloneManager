@@ -1,4 +1,4 @@
-# Telegram Multi-Account Automation
+# TelCloneManager
 
 Telegram automation software for managing a main Telegram account and multiple clone accounts with Telethon. The project also includes an optional web dashboard, a localhost admin API, a CLI client, media utilities, persistent loop state, and an optional aiogram-based Clone Manager.
 
@@ -315,3 +315,5 @@ Check the installed package versions:
 ```
 
 Do not use `pip` against the system Python on modern Ubuntu installations. Use the project virtual environment to avoid PEP 668 and system-package conflicts.
+
+If you find a bug or have a new idea for an improvement, please contact `@BrainOs1` on Telegram.
