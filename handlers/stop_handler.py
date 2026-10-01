@@ -19,7 +19,7 @@ def register_stop_handler(automation):
     """Register stop and stopall command handlers."""
     aid = automation._admin_user_id
 
-    # ─── stop "TEXT" ─────────────────────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^stop\s+["']""", from_users=aid,
     ))
@@ -45,11 +45,11 @@ def register_stop_handler(automation):
 
         key = make_loop_key(event.chat_id, stop_text)
 
-        # Cancel the running task
+        
         cancelled = await automation.loops.cancel_by_key(key)
 
-        # IMPORTANT: Also remove from state persistence
-        # so it doesn't resume after restart
+        
+        
         try:
             unregister_loop(event.chat_id, stop_text)
             logger.info(
@@ -79,7 +79,7 @@ def register_stop_handler(automation):
                     f"No loops running."
                 )
 
-    # ─── stopall ─────────────────────────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r'^stopall$', from_users=aid,
     ))
@@ -91,13 +91,13 @@ def register_stop_handler(automation):
             await event.reply("ℹ️ No active loops.")
             return
 
-        # Get all keys BEFORE cancelling (so we can unregister)
+        
         all_keys = list(automation.loops.active.keys())
 
-        # Cancel all tasks
+        
         count = await automation.loops.cancel_all()
 
-        # Remove ALL from state persistence
+        
         for chat_id, text in all_keys:
             try:
                 unregister_loop(chat_id, text)

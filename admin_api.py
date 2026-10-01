@@ -34,7 +34,7 @@ api_app = Flask(__name__)
 
 _automation = None
 
-# Log buffer (shared with web log handler)
+
 admin_log_buffer = collections.deque(maxlen=1000)
 ANSI_STRIP = re.compile(r'\033\[[0-9;]*m')
 
@@ -76,16 +76,16 @@ def set_automation(automation):
     _automation = automation
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Auth decorator
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def require_token(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         remote = request.remote_addr or ""
 
-        # Extra safety: only allow localhost
+        
         if remote not in ("127.0.0.1", "::1"):
             logger.warning(f"[ADMIN-API] Blocked non-local access from {remote}")
             return jsonify({"error": "Forbidden"}), 403
@@ -101,9 +101,9 @@ def require_token(f):
     return wrapper
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Background asyncio loop for async session-manager calls
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _start_bg_loop():
     global _bg_loop, _bg_thread
@@ -149,9 +149,9 @@ def _run_async(coro, timeout=180):
         raise
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Package management
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 REQUIRED_PACKAGES = {
     "telethon": "telethon==1.44.0",
@@ -207,9 +207,9 @@ def install_package(pip_name):
         return {"success": False, "output": str(e)}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# API — Ping (health check)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 @api_app.route("/ping", methods=["GET"])
 @require_token
@@ -217,9 +217,9 @@ def api_ping():
     return jsonify({"pong": True, "time": time.time()})
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# API — Status
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 @api_app.route("/status", methods=["GET"])
 @require_token
@@ -291,9 +291,9 @@ def api_status():
     })
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# API — Logs
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 @api_app.route("/logs", methods=["GET"])
 @require_token
@@ -314,9 +314,9 @@ def api_logs_clear():
     return jsonify({"success": True})
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# API — Packages
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 @api_app.route("/packages", methods=["GET"])
 @require_token
@@ -349,9 +349,9 @@ def api_packages_install():
     })
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# API — Sessions
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 @api_app.route("/sessions/list", methods=["GET"])
 @require_token
@@ -531,9 +531,9 @@ def api_sessions_make_cancel():
         return jsonify({"success": False, "message": str(e)})
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# API — Bot control
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 @api_app.route("/bot/reload", methods=["POST"])
 @require_token
@@ -591,9 +591,9 @@ def api_internal_telethon_restart():
         return jsonify({"success": False, "message": str(exc)}), 500
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Server runner
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def run_admin_api():
     """Run admin API on localhost only."""

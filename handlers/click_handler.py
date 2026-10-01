@@ -137,7 +137,7 @@ def register_click_handler(automation):
     """Register mainclick / cloneNclick / stopclick handlers."""
     aid = automation._admin_user_id
 
-    # ─── main{D}click / clone{N}{D}click ─────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^(main|clone\d+)D?click""", from_users=aid,
     ))
@@ -196,7 +196,7 @@ def register_click_handler(automation):
                 f"delay={delay}s edit={edit_mode} loop={loop_mode} disappear={disappear_mode}"
             )
 
-            # Register in state
+            
             try:
                 task_id = register_hunt_click(
                     session_ref=session_ref,
@@ -245,10 +245,10 @@ def register_click_handler(automation):
                         exc_info=True,
                     )
                 finally:
-                    # Persistent hunt-click modes must survive a process or
-                    # server restart.  Explicit stopclick/stopall handlers
-                    # remove their state; normal task cleanup must not erase
-                    # the record needed by resume_all_hunt_clicks().
+                    
+                    
+                    
+                    
                     if not (edit_mode or loop_mode or disappear_mode):
                         try:
                             unregister_hunt_click(task_id)
@@ -275,7 +275,7 @@ def register_click_handler(automation):
             except Exception:
                 pass
 
-    # ─── stopclick ───────────────────────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^stopclick""", from_users=aid,
     ))
@@ -328,9 +328,9 @@ def register_click_handler(automation):
             )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Resume
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def resume_all_hunt_clicks(automation):
     """Resume all interrupted hunt-click tasks."""
@@ -440,9 +440,9 @@ async def resume_all_hunt_clicks(automation):
                         exc_info=True,
                     )
                 finally:
-                    # Keep persistent loop/edit/disappear tasks in the
-                    # persisted state so a restart can restore the same
-                    # clone_index and button configuration.
+                    
+                    
+                    
                     if not (em or lm or dm):
                         try:
                             unregister_hunt_click(tid)

@@ -29,7 +29,7 @@ class TempMainState:
         self.temp_username = None
         self.temp_first_name = None
         self.original_admin_id = None
-        self.paused_loops = []  # list of loop keys kept for compatibility
+        self.paused_loops = []  
         self.stop_loops = False
         self.target_chat_id = None
         self.target_label = None
@@ -90,14 +90,14 @@ class TempMainState:
         if not self.active:
             return self.original_admin_id == user_id
 
-        # Temp main active
+        
         if self.temp_user_id == user_id:
             return True
         if self.original_admin_id == user_id:
-            return True  # But filtered in handler to only allow untmp
+            return True  
 
         return False
 
 
-# Global instance
+
 temp_main = TempMainState()

@@ -71,9 +71,9 @@ async def _click_once(client, chat_id, message_id, target, session_name):
         try:
             await message.click(row, col)
         except BotResponseTimeoutError:
-            # Telegram may have processed the click even when the response
-            # timed out. Count this attempt and let the next fetch decide
-            # whether the button is still present.
+            
+            
+            
             logger.warning(
                 '[DCLICK] [%s] Click response timed out for message %s; '
                 "counting the request as submitted",
@@ -138,8 +138,8 @@ async def _run_for_message(automation, chat_id, message_id, config, event_key=No
                     await asyncio.sleep(delay)
 
             if clicked == 0 and disappeared:
-                # This session cannot see the requested button. Try the next
-                # account because the message may be available in its view.
+                
+                
                 if config["loop"]:
                     config["cursor"] = (index + 1) % len(sessions)
                     config["active_clicks"] = 0
@@ -236,7 +236,7 @@ def register_dclick_handler(automation):
             "delay": int(match.group("delay") or 0),
             "button": match.group("button").strip(),
             "cursor": 0,
-            # The command message itself must never be treated as a target.
+            
             "command_message_id": int(event.id),
         }
         if config["count"] <= 0:
@@ -289,8 +289,8 @@ def register_dclick_handler(automation):
         if key in seen:
             return
         seen.add(key)
-        # Bound memory while retaining enough history to suppress duplicate
-        # update deliveries during reconnects.
+        
+        
         if len(seen) > 256:
             seen.pop()
         chat_id = int(event.chat_id)

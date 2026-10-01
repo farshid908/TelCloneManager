@@ -33,14 +33,14 @@ def build_safety_menu(automation):
     online = sum(1 for c in automation.clone_clients if c.is_connected())
     offline = total - online
 
-    # Check for dead sessions
+    
     from config import SESSIONS_DIR
     dead_dir = os.path.join(SESSIONS_DIR, "_dead")
     dead_count = 0
     if os.path.isdir(dead_dir):
         dead_count = len(glob.glob(os.path.join(dead_dir, "*.session")))
 
-    # Disconnected clones
+    
     disconnected = []
     for i, (client, name) in enumerate(
         zip(automation.clone_clients, automation.clone_names)
@@ -76,7 +76,7 @@ def build_safety_menu(automation):
             f"  AuthKey errors, bans, or revoked sessions\n\n"
         )
 
-    # Main status
+    
     main_ok = False
     if automation.main_client:
         try:
@@ -89,7 +89,7 @@ def build_safety_menu(automation):
         f"  {'🟢 Connected' if main_ok else '🔴 Disconnected'}\n\n"
     )
 
-    # Bot status
+    
     text += (
         f"**🤖 Bot Status:**\n"
         f"  Running: {'✅' if automation.bot_running else '❌'}\n"
@@ -100,7 +100,7 @@ def build_safety_menu(automation):
         text += f"  Last error: `{error_short}`\n"
 
     buttons = [
-        # Health actions
+        
         [
             ("🔍 Check All Sessions", "action:safety:check_all"),
         ],
@@ -111,7 +111,7 @@ def build_safety_menu(automation):
             ("💀 View Dead Sessions", "action:safety:dead_list"),
         ],
 
-        # Navigation
+        
         [
             ("🔄 Refresh", "menu:safety"),
             ("🏠 Main Menu", "menu:main"),

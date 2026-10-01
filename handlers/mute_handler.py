@@ -59,7 +59,7 @@ def register_mute_handler(automation):
                 entity = await event.get_input_chat()
                 chat_id = int(event.chat_id)
             else:
-                # Without a target, mute is meaningful only in a group.
+                
                 return
 
             _muted_chats(automation).add(int(chat_id))
@@ -117,7 +117,7 @@ def register_mute_handler(automation):
             await event.edit(report, parse_mode=None)
             return
 
-        # Keep the command itself edited, then send the remaining rows.
+        
         chunks = []
         current = []
         current_len = 0

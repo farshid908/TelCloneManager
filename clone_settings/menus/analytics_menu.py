@@ -16,7 +16,7 @@ def build_analytics_menu(automation):
     active_loops = len(automation.loops.active)
     mirror = automation.mirror_mode
 
-    # Process uptime
+    
     try:
         import psutil
         process = psutil.Process(os.getpid())
@@ -27,12 +27,12 @@ def build_analytics_menu(automation):
         minutes = int((uptime_seconds % 3600) // 60)
         uptime_str = f"{hours}h {minutes}m"
 
-        # Memory
+        
         mem_info = process.memory_info()
         ram_mb = mem_info.rss / (1024 * 1024)
         ram_str = f"{ram_mb:.1f} MB"
 
-        # CPU
+        
         cpu_percent = process.cpu_percent(interval=0.1)
         cpu_str = f"{cpu_percent:.1f}%"
     except ImportError:
@@ -44,7 +44,7 @@ def build_analytics_menu(automation):
         ram_str = "—"
         cpu_str = "—"
 
-    # Disk usage (sessions dir)
+    
     try:
         from config import SESSIONS_DIR
         total_size = 0
@@ -59,7 +59,7 @@ def build_analytics_menu(automation):
     except Exception:
         disk_str = "—"
 
-    # State persistence stats
+    
     try:
         from state_persistence import get_stats
         stats = get_stats()

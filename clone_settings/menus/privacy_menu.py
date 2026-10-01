@@ -47,7 +47,7 @@ def build_privacy_main_menu(automation):
         "or use **Bulk** to set for all clones.\n"
     )
 
-    # Clone selector
+    
     clone_buttons = []
     row = []
     limit = min(total, CLONES_PER_PAGE * 2)
@@ -80,13 +80,13 @@ def build_privacy_main_menu(automation):
             ("📋 Full Clone List", "menu:clone_list"),
         ])
 
-    # Bulk privacy
+    
     clone_buttons.append([
         ("🔒 Bulk: Hide All", "action:bulk:privacy:hideall"),
         ("🌐 Bulk: Show All", "action:bulk:privacy:showall"),
     ])
 
-    # Navigation
+    
     clone_buttons.append([
         ("🏠 Main Menu", "menu:main"),
     ])
@@ -135,7 +135,7 @@ def build_privacy_clone_menu(automation, clone_idx: int):
         key = pk["key"]
         label = pk["label"]
 
-        # Three options per privacy key
+        
         buttons.append([
             (f"{label}", "noop"),
         ])
@@ -145,13 +145,13 @@ def build_privacy_clone_menu(automation, clone_idx: int):
             ("🔒", f"action:privacy:{clone_idx}:{key}:nobody"),
         ])
 
-    # Quick presets
+    
     buttons.append([
         ("🔒 All → Nobody", f"action:privacy:{clone_idx}:all:nobody"),
         ("🌐 All → Everyone", f"action:privacy:{clone_idx}:all:everyone"),
     ])
 
-    # Navigation
+    
     buttons.append([
         ("◀️ Privacy Menu", "menu:privacy_main"),
         ("👤 Clone Detail", f"menu:clone:{clone_idx}"),

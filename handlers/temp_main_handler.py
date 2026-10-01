@@ -36,9 +36,9 @@ TG_LINK_RE = re.compile(
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _auto_delete(event, delay=2.0):
     """Auto-delete event message after delay."""
@@ -169,8 +169,8 @@ async def _handle_temp_go(automation, event):
         logger.warning("[TEMP-MAIN] Invalid /go request: %s", event.raw_text)
         return
 
-    # The same message can be observed by several clones. Start one job and
-    # let that job operate all clones, instead of launching duplicates.
+    
+    
     key = (event.chat_id, event.id)
     async with _temp_go_lock:
         if key in _temp_go_seen:
@@ -284,15 +284,15 @@ async def _resolve_link_message(client, link_text):
     return None, None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Register handlers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def register_temp_main_handler(automation):
     """Register temp main / untmp main handlers."""
     aid = automation._admin_user_id
 
-    # ─── temp main (reply to user) ──────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r'^temp\s+main(?:\s+.*)?$',
         from_users=aid,
@@ -408,7 +408,7 @@ def register_temp_main_handler(automation):
                 exc_info=True,
             )
 
-    # ─── untmp main ─────────────────────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r'^untmp\s+main\s*$',
         from_users=aid,
@@ -426,7 +426,7 @@ def register_temp_main_handler(automation):
             old_username = temp_main.temp_username
             resume_loops = temp_main.stop_loops
 
-            # The command is silent: remove it and revoke access immediately.
+            
             try:
                 await event.delete()
             except Exception:
@@ -456,9 +456,9 @@ def register_temp_main_handler(automation):
             )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Temp Main command dispatcher
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _register_temp_main_listeners(automation, temp_user_id):
     """Register event handler that processes temp main's commands."""
@@ -477,7 +477,7 @@ def _register_temp_main_listeners(automation, temp_user_id):
 
             raw = (event.raw_text or "").strip()
 
-            # Handle media-only messages (mirror)
+            
             if not raw:
                 if automation.mirror_mode and event.message.media:
                     await _cmd_mirror_media(automation, event)
@@ -489,7 +489,7 @@ def _register_temp_main_listeners(automation, temp_user_id):
                 await _handle_temp_go(automation, event)
                 return
 
-            # Mirror on/off
+            
             if raw_lower == "mirror on":
                 automation.mirror_mode = True
                 reply = await event.reply("✅ **mirror mod on**")
@@ -574,8 +574,8 @@ def _register_temp_main_listeners(automation, temp_user_id):
         events.NewMessage(from_users=temp_user_id),
     )
 
-    # A Temp Main command can be sent in any group or private chat visible to
-    # a clone. Register a lightweight /go listener on every clone as well.
+    
+    
     for clone_client in automation.clone_clients:
         async def _clone_go_handler(event, _automation=automation):
             if event.sender_id != temp_user_id or not temp_main.active:
@@ -607,9 +607,9 @@ def _remove_temp_main_listeners(automation):
     logger.info("[TEMP-MAIN] Listeners removed")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Individual command implementations
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _cmd_mirror_text(automation, event, text):
     """Mirror text message from temp main."""

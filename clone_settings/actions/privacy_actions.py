@@ -42,9 +42,9 @@ from ..utils.keyboards import make_inline_keyboard
 logger = logging.getLogger("CloneManager")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Privacy key mapping
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 PRIVACY_KEY_MAP = {
     "photo":    InputPrivacyKeyProfilePhoto,
@@ -89,9 +89,9 @@ def _get_clone(automation, clone_idx: int):
     return automation.clone_clients[zero_idx], automation.clone_names[zero_idx]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Set privacy for a single key
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _set_privacy(client, key_name: str, value_name: str, session_name: str) -> bool:
     """Set a single privacy key to a value."""
@@ -138,9 +138,9 @@ async def _set_privacy(client, key_name: str, value_name: str, session_name: str
         return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Set all privacy keys at once
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _set_all_privacy(client, value_name: str, session_name: str) -> dict:
     """Set ALL privacy keys to the same value."""
@@ -153,15 +153,15 @@ async def _set_all_privacy(client, value_name: str, session_name: str) -> dict:
         else:
             results["failed"] += 1
 
-        # Small delay to avoid flood
+        
         await asyncio.sleep(0.3)
 
     return results
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Main handler
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def handle_privacy_action(event, data: str, automation):
     """
@@ -175,7 +175,7 @@ async def handle_privacy_action(event, data: str, automation):
         action:privacy:3:all:everyone       → clone #3, ALL keys → everyone
     """
     parts = data.split(":")
-    # parts: ["action", "privacy", clone_idx, key_name, value_name]
+    
 
     if len(parts) < 5:
         await event.answer("⚠️ Invalid privacy action", alert=True)
@@ -200,20 +200,20 @@ async def handle_privacy_action(event, data: str, automation):
         await event.answer(f"⚠️ Clone #{clone_idx} is offline", alert=True)
         return
 
-    # Validate value
+    
     if value_name not in PRIVACY_VALUE_MAP:
         await event.answer(f"⚠️ Invalid value: {value_name}", alert=True)
         return
 
     value_label = PRIVACY_VALUE_LABELS.get(value_name, value_name)
 
-    # ─── ALL keys at once ───────────────────────────────────────
+    
     if key_name == "all":
         await event.answer(f"⏳ Setting all privacy to {value_label}…")
 
         results = await _set_all_privacy(client, value_name, name)
 
-        # Refresh the menu
+        
         from ..menus.privacy_menu import build_privacy_clone_menu
         text, keyboard = build_privacy_clone_menu(automation, clone_idx)
 
@@ -227,7 +227,7 @@ async def handle_privacy_action(event, data: str, automation):
         await event.edit(text, buttons=keyboard)
         return
 
-    # ─── Single key ─────────────────────────────────────────────
+    
     if key_name not in PRIVACY_KEY_MAP:
         await event.answer(f"⚠️ Unknown privacy key: {key_name}", alert=True)
         return
@@ -241,7 +241,7 @@ async def handle_privacy_action(event, data: str, automation):
             f"✅ #{clone_idx} {key_label} → {value_label}"
         )
 
-        # Refresh the privacy menu
+        
         from ..menus.privacy_menu import build_privacy_clone_menu
         text, keyboard = build_privacy_clone_menu(automation, clone_idx)
         await event.edit(text, buttons=keyboard)
@@ -252,9 +252,9 @@ async def handle_privacy_action(event, data: str, automation):
         )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Bulk privacy (all clones)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def bulk_privacy_all_clones(automation, value_name: str) -> dict:
     """Set ALL privacy keys to value_name for ALL clones."""
@@ -271,7 +271,7 @@ async def bulk_privacy_all_clones(automation, value_name: str) -> dict:
         total_results["success"] += results["success"]
         total_results["failed"] += results["failed"]
 
-        # Delay between clones
+        
         await asyncio.sleep(0.5)
 
     return total_results

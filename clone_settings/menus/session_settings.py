@@ -32,8 +32,8 @@ def _status_counts(slots):
     disabled = []
     invalid = []
     for slot in slots:
-        # An empty SQLite session can never be a valid Telethon session.
-        # Detect this immediately instead of waiting for Session Repair.
+        
+        
         is_empty = False
         try:
             import os
@@ -99,8 +99,8 @@ def build_commander_menu():
 
     names = list_commanders()
     active = active_name()
-    # The active commander is already selected and must not appear as a
-    # switch target.
+    
+    
     names = [name for name in names if name != active]
     rows = []
     for index in range(0, len(names), 2):

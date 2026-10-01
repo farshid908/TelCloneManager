@@ -28,9 +28,9 @@ from telethon.errors import (
 logger = logging.getLogger("TG-Auto")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Predefined reaction sets
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 POSITIVE_REACTIONS = [
     "👍", "❤️", "🔥", "🥰", "👏", "😁", "🤩", "🎉",
@@ -45,14 +45,14 @@ NEGATIVE_REACTIONS = [
 
 ALL_REACTIONS = POSITIVE_REACTIONS + NEGATIVE_REACTIONS
 
-# Cache of allowed reactions per session+chat
-# {(session_key, chat_id): [emoji, ...]}
+
+
 _chat_reaction_cache: Dict[Tuple[str, int], List[str]] = {}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Cache helpers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _get_session_cache_key(client, session_name="Unknown") -> str:
     """Build a stable cache key for a client/session."""
@@ -104,9 +104,9 @@ def _append_cached_reaction(
         _chat_reaction_cache[key].append(emoji)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Emoji helpers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def extract_emojis(text):
     """
@@ -197,9 +197,9 @@ def pick_emoji(emoji_input, allowed_reactions=None):
     return emoji_input
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Discover allowed reactions from Telegram API
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def discover_chat_reactions(
     client,
@@ -307,9 +307,9 @@ async def discover_chat_reactions(
         return list(ALL_REACTIONS)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Send reaction to a single message
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def send_reaction(
     client,
@@ -418,9 +418,9 @@ async def send_reaction(
         return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Resolve peer and react (single message)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def resolve_peer_and_react(
     client,

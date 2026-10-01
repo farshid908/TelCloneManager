@@ -31,8 +31,8 @@ from condition_engine import evaluate_condition, wait_for_bot_reply
 
 logger = logging.getLogger("TG-Auto")
 
-# A bridge operation is expensive (marker + propagation wait + clone dialog
-# refresh). Reuse a successful preparation for a short period.
+
+
 _BRIDGE_CACHE_TTL = 600
 _bridge_cache_until = {}
 
@@ -170,7 +170,7 @@ async def _handle_dclick(
         f"until gone (delay={dclick_delay}s)"
     )
 
-    # Wait for bot reply first
+    
     bot_reply = await wait_for_bot_reply(
         client=client,
         chat_id=chat_id,
@@ -190,7 +190,7 @@ async def _handle_dclick(
     click_count = 0
 
     while True:
-        # Find the button on current message
+        
         match = find_matching_button(target_msg, dclick_text)
 
         if match is None:
@@ -209,7 +209,7 @@ async def _handle_dclick(
         row_idx, col_idx, button, matched, rank = match
         btn_label = (button.text or "").strip()
 
-        # Click it
+        
         try:
             await target_msg.click(row_idx, col_idx)
             click_count += 1
@@ -224,14 +224,14 @@ async def _handle_dclick(
             )
             break
 
-        # Wait before next attempt
+        
         if dclick_delay > 0:
             logger.info(
                 f"[DCLICK] [{session_name}] Waiting {dclick_delay}s…"
             )
             await asyncio.sleep(dclick_delay)
 
-        # Re-fetch the message to see if button still exists
+        
         try:
             fresh_msg = await client.get_messages(
                 chat_id, ids=target_msg.id,
@@ -250,7 +250,7 @@ async def _handle_dclick(
                 )
                 break
 
-            # Update target for next iteration
+            
             target_msg = fresh_msg
 
         except Exception as e:
@@ -290,7 +290,7 @@ async def pre_bridge_target(
         logger.debug(f"[SEND-PREP] Reusing bridge cache for {target}")
         return target
 
-    # Try to get @username from Main
+    
     try:
         entity = await main_client.get_entity(target)
         username = getattr(entity, "username", None)
@@ -304,7 +304,7 @@ async def pre_bridge_target(
     except Exception as e:
         logger.debug(f"[SEND-PREP] Can't get Main entity for {target}: {e}")
 
-    # Check if clones already know
+    
     already_ok = 0
     for client in all_clone_clients:
         try:
@@ -322,7 +322,7 @@ async def pre_bridge_target(
         f"resolve {target}"
     )
 
-    # Try bridge
+    
     try:
         entity = await main_client.get_entity(target)
 
@@ -385,9 +385,9 @@ async def pre_bridge_target(
     except Exception as e:
         logger.error(f"[SEND-PREP] Bridge strategy failed: {e}")
 
-    # Even if one clone could not verify the peer, the bridge work has already
-    # been performed. Avoid repeating the expensive operation for every next
-    # message; the normal resolve fallback will handle an individual miss.
+    
+    
+    
     _bridge_cache_until[cache_key] = time.monotonic() + _BRIDGE_CACHE_TTL
     return target
 
@@ -427,12 +427,12 @@ async def safe_send_message(
     if reply_to:
         kwargs["reply_to"] = reply_to
 
-    # Try silent resolve first
+    
     entity = await resolve_entity(
         client, target_val, session_name=session_name, silent=True,
     )
 
-    # Bridge fallback
+    
     if entity is None and main_client is not None and bridge_group_id is not None:
         logger.info(
             f"[SEND] [{session_name}] {target_val} not cached — trying bridge…"
@@ -457,7 +457,7 @@ async def safe_send_message(
         )
         return False
 
-    # Send the message
+    
     sent_msg = None
     for attempt in range(1, 4):
         try:
@@ -486,7 +486,7 @@ async def safe_send_message(
         logger.error(f"[SEND] [{session_name}] ✗ All attempts failed")
         return False
 
-    # ── IF structure (highest priority) ──────────────────────────
+    
     if if_structure:
         await _handle_if_structure(
             client, chat_target.chat_id, session_name,
@@ -494,21 +494,21 @@ async def safe_send_message(
         )
         return sent_msg if return_message else True
 
-    # ── Simple button click ──────────────────────────────────────
+    
     if button_text:
         logger.info(f"[CLICK] [{session_name}] Watching for \"{button_text}\"")
         await handle_button_click(
             client=client, chat_id=chat_target.chat_id,
             button_text=button_text, session_name=session_name,
             after_msg_id=sent_msg.id,
-            # A bot may send its inline-keyboard response as a new message
-            # without replying to the command message.  The sent-message
-            # boundary is sufficient to avoid clicking stale buttons.
+            
+            
+            
             reply_to_msg_id=None,
             chain_delay=click_chain_delay,
         )
 
-    # ── Dclick (click until disappear) ───────────────────────────
+    
     if dclick_text:
         await _handle_dclick(
             client=client,
@@ -519,7 +519,7 @@ async def safe_send_message(
             dclick_delay=dclick_delay,
         )
 
-    # ── Simple reply ─────────────────────────────────────────────
+    
     if reply_text:
         from handlers.reply_handler import send_reply
         logger.info(f"[REPLY] [{session_name}] Waiting to reply…")

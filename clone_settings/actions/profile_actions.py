@@ -50,7 +50,7 @@ async def handle_profile_action(event, data: str, automation, set_pending_input)
         action:profile:3:remove_photo
     """
     parts = data.split(":")
-    # parts: ["action", "profile", clone_idx, action_type]
+    
 
     if len(parts) < 4:
         await event.answer("⚠️ Invalid action format", alert=True)
@@ -73,7 +73,7 @@ async def handle_profile_action(event, data: str, automation, set_pending_input)
         await event.answer(f"⚠️ Clone #{clone_idx} is offline", alert=True)
         return
 
-    # ─── Actions that need text input ───────────────────────────
+    
     if action_type == "first_name":
         set_pending_input(event.sender_id, "profile:name", {
             "clone_idx": clone_idx,
@@ -103,7 +103,7 @@ async def handle_profile_action(event, data: str, automation, set_pending_input)
         return
 
     if action_type in ("name",):
-        # Legacy "name" action → redirect to first_name
+        
         set_pending_input(event.sender_id, "profile:name", {
             "clone_idx": clone_idx,
             "field": "first_name",
@@ -153,7 +153,7 @@ async def handle_profile_action(event, data: str, automation, set_pending_input)
         await event.answer()
         return
 
-    # ─── Actions that execute immediately ───────────────────────
+    
     if action_type == "remove_username":
         await _remove_username(event, client, name, clone_idx)
         return
@@ -165,9 +165,9 @@ async def handle_profile_action(event, data: str, automation, set_pending_input)
     await event.answer(f"❓ Unknown profile action: {action_type}", alert=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Helper: get current values
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _get_current_name(client, which: str) -> str:
     try:
@@ -191,9 +191,9 @@ def _get_current_username(client) -> str:
     return "—"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Complete text input actions
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def complete_name_change(event, text: str, input_data: dict, automation):
     """Complete a name change after receiving text input."""
@@ -205,7 +205,7 @@ async def complete_name_change(event, text: str, input_data: dict, automation):
         await event.reply(f"⚠️ Clone #{clone_idx} not found")
         return
 
-    # Handle clear
+    
     if text == ".":
         if field == "first_name":
             await event.reply("⚠️ First name cannot be empty")
@@ -215,8 +215,8 @@ async def complete_name_change(event, text: str, input_data: dict, automation):
     try:
         apply_now = True
         if input_data.get("normal_mode"):
-            # Normal Mode changes are staged in cloneN.json and applied only
-            # through the Normal Mode Apply button.
+            
+            
             apply_now = False
             text = text[:64]
 
@@ -232,7 +232,7 @@ async def complete_name_change(event, text: str, input_data: dict, automation):
         )
 
         if apply_now:
-            # Refresh cached user info
+            
             try:
                 client._self_user = await client.get_me()
             except Exception:
@@ -266,18 +266,18 @@ async def complete_bio_change(event, text: str, input_data: dict, automation):
         await event.reply(f"⚠️ Clone #{clone_idx} not found")
         return
 
-    # Handle clear
+    
     if text == ".":
         text = ""
 
-    # Truncate to 70 chars (Telegram limit)
+    
     if len(text) > 70:
         text = text[:70]
 
     try:
         apply_now = True
         if input_data.get("normal_mode"):
-            # Keep Normal Mode edits staged until Apply is pressed.
+            
             apply_now = False
 
         if apply_now:
@@ -314,7 +314,7 @@ async def complete_username_change(event, text: str, input_data: dict, automatio
         await event.reply(f"⚠️ Clone #{clone_idx} not found")
         return
 
-    # Clean username
+    
     username = text.strip().lstrip("@")
 
     try:
@@ -351,9 +351,9 @@ async def complete_username_change(event, text: str, input_data: dict, automatio
         await event.reply(f"❌ Failed: {type(e).__name__}: {e}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Immediate actions
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _remove_username(event, client, name: str, clone_idx: int):
     """Remove username from a clone."""

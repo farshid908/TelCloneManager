@@ -37,7 +37,7 @@ def build_bulk_menu(automation):
                 "action:clone:toggle",
             ),
         ],
-        # ── Profile bulk ──
+        
         [("━━ 📸 Profile ━━", "noop")],
         [
             ("📸 Set Photo", "action:bulk:photo"),
@@ -47,21 +47,21 @@ def build_bulk_menu(automation):
             ("📸 Photo + Watermark", "action:bulk:photo_wm"),
         ],
 
-        # ── Name bulk ──
+        
         [("━━ ✏️ Names ━━", "noop")],
         [
             ("✏️ Same Name All", "action:bulk:name"),
             ("✏️ Template Name", "action:bulk:name_template"),
         ],
 
-        # ── Bio bulk ──
+        
         [("━━ 📝 Bio ━━", "noop")],
         [
             ("📝 Same Bio All", "action:bulk:bio"),
             ("🗑️ Clear All Bios", "action:bulk:clear_bio"),
         ],
 
-        # ── Privacy bulk ──
+        
         [("━━ 🔒 Privacy ━━", "noop")],
         [
             ("🔒 Hide All From Everyone", "action:bulk:privacy:hideall"),
@@ -71,21 +71,21 @@ def build_bulk_menu(automation):
             ("👥 Contacts Only", "action:bulk:privacy:contacts"),
         ],
 
-        # ── Group bulk ──
+        
         [("━━ 👥 Groups ━━", "noop")],
         [
             ("🚀 Join Group", "action:group:join"),
             ("👋 Leave Group", "action:group:leave"),
         ],
 
-        # ── Loop bulk ──
+        
         [("━━ 🔄 Loops ━━", "noop")],
         [
             ("🛑 Stop All Loops", "action:loop:stopall"),
             ("🪞 Mirror Toggle", "action:loop:mirror_toggle"),
         ],
 
-        # ── Navigation ──
+        
         [
             ("🏠 Main Menu", "menu:main"),
         ],

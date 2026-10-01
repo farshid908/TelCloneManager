@@ -111,12 +111,12 @@ async def resolve_entity_with_bridge(
       2. If fails and bridge context available → try bridge
       3. Retry with new target after bridge
     """
-    # First attempt — silent so we don't spam errors
+    
     entity = await resolve_entity(client, target, session_name, silent=True)
     if entity is not None:
         return entity
 
-    # Bridge fallback
+    
     if main_client is not None and bridge_group_id is not None:
         try:
             from bridge import prepare_entity_for_clones
@@ -139,7 +139,7 @@ async def resolve_entity_with_bridge(
                     f"[{session_name}] Bridge {result['method']} — "
                     f"retrying with {new_target}"
                 )
-                # Retry, this time NOT silent so we see errors
+                
                 entity = await resolve_entity(
                     client, new_target, session_name, silent=False,
                 )
@@ -156,7 +156,7 @@ async def resolve_entity_with_bridge(
         except Exception as e:
             logger.error(f"[{session_name}] Bridge fallback error: {e}")
 
-    # Final failure — log now
+    
     logger.error(
         f"[{session_name}] Failed to resolve {target} even after bridge"
     )
@@ -213,7 +213,7 @@ async def auto_extract_chat_target(
             )
             seeded = result.get("success", False)
             if seeded and result.get("method") == "username":
-                # Bridge found a username — use it
+                
                 new_target = result["target"]
                 logger.info(f"[RESOLVE] Using discovered username: {new_target}")
                 return ChatTarget(

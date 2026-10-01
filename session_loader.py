@@ -42,7 +42,7 @@ def discover_sessions(sessions_dir: str = SESSIONS_DIR) -> Tuple[str, List[str]]
     for sf in files:
         base = os.path.splitext(os.path.basename(sf))[0]
 
-        # Skip pending / hidden sessions
+        
         if base.startswith("_"):
             continue
 

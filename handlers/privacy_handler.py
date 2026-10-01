@@ -121,7 +121,7 @@ def _privacy_chat_target_id(chat):
     raw_id = abs(raw_id)
     raw_str = str(raw_id)
 
-    # If it looks like a marked supergroup/channel ID (-100...)
+    
     if raw_str.startswith("100") and len(raw_str) > 3:
         try:
             return int(raw_str[3:])
@@ -257,7 +257,7 @@ def register_privacy_handler(automation):
     """Register all privacy-related command handlers."""
     aid = automation._admin_user_id
 
-    # ─── show prof / hide prof (Main + ALL clones) ──────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^(show|hide)\s+prof""", from_users=aid,
     ))
@@ -278,7 +278,7 @@ def register_privacy_handler(automation):
             client = automation.main_client
             session_name = "Main"
 
-            # The command must disappear from its original chat immediately.
+            
             try:
                 await event.delete()
             except Exception as exc:
@@ -291,7 +291,7 @@ def register_privacy_handler(automation):
                 automation, action, total
             )
 
-            # Get Main user ID (to detect Saved Messages)
+            
             try:
                 main_me = await client.get_me()
                 main_user_id = main_me.id
@@ -313,7 +313,7 @@ def register_privacy_handler(automation):
             target_desc = ""
 
             if raw_targets:
-                # ─── Case 1: Explicit @usernames ─────────────────
+                
                 logger.info(
                     f"[PRIVACY-CMD] Resolving {len(raw_targets)} target(s)…"
                 )
@@ -336,11 +336,11 @@ def register_privacy_handler(automation):
                     target_desc += f" ({len(failed)} failed)"
 
             else:
-                # ─── Case 2: No usernames — check context ────────
+                
                 if is_saved_messages:
-                    # In Saved Messages the command is sent to the Main
-                    # account itself. Treat a targetless command as a request
-                    # for the sender's own profile, instead of rejecting it.
+                    
+                    
+                    
                     target_user_ids = [main_user_id]
                     target_desc = f"self (CHATID: {main_user_id})"
                     logger.info(
@@ -407,7 +407,7 @@ def register_privacy_handler(automation):
             else:
                 forget_targets(target_user_ids, target_chat_ids)
 
-            # ─── Apply to Main ───────────────────────────────────
+            
             main_ok = await _update_profile_related_privacy(
                 client=client,
                 action=action,
@@ -421,7 +421,7 @@ def register_privacy_handler(automation):
             if update_status is not None:
                 await update_status("Main", "✅" if main_ok else "❌", 1)
 
-            # ─── Apply to ALL clones ─────────────────────────────
+            
             clone_success = 0
             clone_failed = 0
 
@@ -432,7 +432,7 @@ def register_privacy_handler(automation):
 
             for clone_client, clone_name in clone_pairs:
                 try:
-                    # Clone last-seen/online and Saved Music follow photo.
+                    
                     ok = await _update_profile_related_privacy(
                         client=clone_client,
                         action=action,
@@ -509,7 +509,7 @@ def register_privacy_handler(automation):
                 except Exception:
                     pass
 
-    # ─── prof status — show current privacy settings ────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^prof\s+status""", from_users=aid,
     ))
@@ -621,7 +621,7 @@ def register_privacy_handler(automation):
                 parse_mode=None,
             )
 
-    # ─── prof hideall — force base rule to Nobody ───────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^prof\s+hideall""", from_users=aid,
     ))

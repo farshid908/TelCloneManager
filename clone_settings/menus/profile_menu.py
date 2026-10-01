@@ -30,10 +30,10 @@ def build_profile_main_menu(automation):
         "or use **Bulk Actions** for all at once.\n"
     )
 
-    # Clone selector buttons (up to first page)
+    
     clone_buttons = []
     row = []
-    limit = min(total, CLONES_PER_PAGE * 2)  # show more in profile view
+    limit = min(total, CLONES_PER_PAGE * 2)  
 
     for i in range(limit):
         clone_idx = i + 1
@@ -63,7 +63,7 @@ def build_profile_main_menu(automation):
             ("📋 Full Clone List", "menu:clone_list"),
         ])
 
-    # Bulk profile actions
+    
     clone_buttons.append([
         ("📸 Bulk Photo", "action:bulk:photo"),
         ("✏️ Bulk Name", "action:bulk:name"),
@@ -73,7 +73,7 @@ def build_profile_main_menu(automation):
         ("🧩 Normal Mode", "menu:normal_main"),
     ])
 
-    # Navigation
+    
     clone_buttons.append([
         ("🏠 Main Menu", "menu:main"),
     ])
@@ -95,7 +95,7 @@ def build_profile_clone_menu(automation, clone_idx: int):
     client = automation.clone_clients[zero_idx]
     name = automation.clone_names[zero_idx]
 
-    # Get current info
+    
     first_name = "—"
     last_name = "—"
     username = "—"
@@ -135,27 +135,27 @@ def build_profile_clone_menu(automation, clone_idx: int):
     )
 
     buttons = [
-        # Name management
+        
         [
             ("✏️ First Name", f"action:profile:{clone_idx}:first_name"),
             ("✏️ Last Name", f"action:profile:{clone_idx}:last_name"),
         ],
-        # Bio & Username
+        
         [
             ("📝 Bio", f"action:profile:{clone_idx}:bio"),
             ("🔗 Username", f"action:profile:{clone_idx}:username"),
         ],
-        # Photo management
+        
         [
             ("📸 Set Photo", f"action:profile:{clone_idx}:photo"),
             ("🗑️ Remove Photo", f"action:profile:{clone_idx}:remove_photo"),
             ("🧩 Normal Mode", f"menu:normal:{clone_idx}"),
         ],
-        # Remove username
+        
         [
             ("🗑️ Remove Username", f"action:profile:{clone_idx}:remove_username"),
         ],
-        # Navigation
+        
         [
             ("◀️ Profile Menu", "menu:profile_main"),
             ("👤 Clone Detail", f"menu:clone:{clone_idx}"),

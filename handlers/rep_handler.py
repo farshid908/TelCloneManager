@@ -36,8 +36,8 @@ async def _edit_status(status_event, text):
     try:
         await status_event.edit(text, parse_mode=None)
     except Exception:
-        # The command message may have been deleted or become uneditable;
-        # status reporting must never stop the automation itself.
+        
+        
         logger.debug("[REP-CMD] Could not edit status message", exc_info=True)
 
 
@@ -129,15 +129,15 @@ async def cancel_all_rep_jobs():
             task.cancel()
     if jobs:
         await asyncio.gather(*jobs, return_exceptions=True)
-    # Keep persisted checkpoints across a normal shutdown/restart. Explicit
-    # `rep stop` and real finite-job completion remove them instead.
+    
+    
     logger.info("[REP-CMD] Cancelled runtime rep tasks; checkpoints preserved")
 
 
 async def start_rep_job(automation, parsed, status_event=None, restore=None):
     """Install one reply-trigger listener in the command's current chat."""
-    # The first numeric argument is the sender ID that emits the trigger.
-    # The source group is the group where the command was issued.
+    
+    
     source_chat = (
         getattr(status_event, "chat_id", None)
         if status_event is not None
@@ -189,8 +189,8 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
     if parsed.get("mode") == "rep":
         max_triggers = parsed.get("batch")
     elif parsed.get("mode") == "repall":
-        # repallN runs N triggers on every configured account, starting at
-        # the selected account, then unregisters itself.
+        
+        
         max_triggers = parsed.get("batch", 1) * len(accounts)
     else:
         max_triggers = None
@@ -231,9 +231,9 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
                 "last_selected_line", "last_action", "last_timeout",
             }
         })
-        # An interrupted in-flight cycle must not be replayed from old
-        # Telegram history. Its exact checkpoint remains visible, but after a
-        # restart the listener safely waits for a new trigger.
+        
+        
+        
         if restore.get("state") != "waiting_for_trigger":
             meta["last_interrupted_state"] = restore.get("state")
             meta["last_action"] = "restarted_waiting_for_new_trigger"
@@ -287,8 +287,8 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
         f"Selected line: LINE {parsed.get('line') or 1}",
     ])
     await _edit_status(status_event, "\n".join(status_lines))
-    # Keep the initial listener description fixed. Runtime progress belongs
-    # in logs and `rep -list`; it must not overwrite the command message.
+    
+    
     status_event = None
 
     async def _job():
@@ -296,8 +296,8 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
 
         async def _on_source(event):
             nonlocal completed
-            # raw_text contains a media caption too.  Fall back to the
-            # underlying message field for Telethon update variants.
+            
+            
             raw = _event_text(event)
             if event.chat_id != source_chat:
                 return
@@ -310,8 +310,8 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
                 if max_triggers is not None and completed >= max_triggers:
                     return
                 if parsed.get("account") == "random":
-                    # random means a fresh random sender for every trigger,
-                    # not one random starting point for the whole job.
+                    
+                    
                     account_index = random.randrange(len(accounts))
                 elif parsed.get("mode") in {"reploop", "repall"}:
                     account_index = (start_index + completed // parsed["batch"]) % len(accounts)
@@ -373,8 +373,8 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
                     response_box["event"] = response
                     response_event.set()
 
-                # Register before sending only when a reply/line phase was
-                # requested. A plain rep command just sends the first reply.
+                
+                
                 if has_reply_chain:
                     client.add_event_handler(
                         _on_response,
@@ -441,7 +441,7 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
                         else None
                     )
 
-                    # Phase 1: wait for the first valid reply to /wa.
+                    
                     response = response_box.get("event")
                     first_reply_timed_out = False
                     while response is None:
@@ -489,8 +489,8 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
                             response = response_box.get("event")
 
                     if first_reply_timed_out:
-                        # Only this trigger cycle is abandoned. The REP/
-                        # REPLOOP listener remains alive for later triggers.
+                        
+                        
                         _checkpoint(
                             state="waiting_for_trigger",
                             last_timeout=True,
@@ -513,8 +513,8 @@ async def start_rep_job(automation, parsed, status_event=None, restore=None):
                             finished.set()
                         return
 
-                    # Phase 2: after the first reply, wait /N seconds so an
-                    # edit, deletion, or replacement reply can settle.
+                    
+                    
                     await asyncio.sleep(parsed["delay"])
                     latest_response = response_box.get("event") or response
                     try:
@@ -796,10 +796,10 @@ async def _stop_rep_job(status_event, trigger, target_chat):
 
 
 def register_rep_handler(automation):
-    # Listen to all outgoing Main messages and identify REP commands inside
-    # the callback.  Telethon's pattern filter can miss self-sent messages in
-    # some reconnect/session states; the client itself is already Main, so an
-    # outgoing event is the correct scope here.
+    
+    
+    
+    
     @automation.main_client.on(events.NewMessage(outgoing=True))
     async def _rep(event):
         raw = re.sub(

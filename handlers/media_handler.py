@@ -36,7 +36,7 @@ def register_media_handler(automation):
     """Register save/send/del/list media handlers."""
     aid = automation._admin_user_id
 
-    # ─── save as vim/vom/mus/vid "name" ──────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^save\s+as\s+(vim|vom|mus|vid)\s""", from_users=aid,
     ))
@@ -95,7 +95,7 @@ def register_media_handler(automation):
         except Exception as e:
             logger.error(f"[SAVE-MEDIA] Error: {e}", exc_info=True)
 
-    # ─── send vim/vom/mus/vid "name" ─────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^send(?:\([^)]*\))?\s+(vim|vom|mus|vid)\s""",
         from_users=aid,
@@ -118,16 +118,16 @@ def register_media_handler(automation):
             chat_id = event.chat_id
             type_info = MEDIA_TYPES.get(media_type, {})
 
-            # Build sender list
+            
             senders = []
 
             if clone_indices is None:
-                # No parens → only Main
+                
                 if include_main:
                     senders.append((automation.main_client, "Main"))
 
             elif clone_indices == "all":
-                # send(all)
+                
                 if include_main:
                     senders.append((automation.main_client, "Main"))
                 for c, n in zip(
@@ -136,7 +136,7 @@ def register_media_handler(automation):
                     senders.append((c, n))
 
             else:
-                # send(1 3 8)
+                
                 if include_main:
                     senders.append((automation.main_client, "Main"))
                 for idx in clone_indices:
@@ -151,14 +151,14 @@ def register_media_handler(automation):
                 await event.reply("⚠️ No sessions selected")
                 return
 
-            # Log
+            
             sender_desc = ", ".join(n for _, n in senders)
             logger.info(
                 f"[SEND-MEDIA] {type_info.get('emoji', '📎')} "
                 f"'{name}' → [{sender_desc}] in chat {chat_id}"
             )
 
-            # Send from each session
+            
             success = 0
             failed = 0
 
@@ -181,14 +181,14 @@ def register_media_handler(automation):
                     )
                     failed += 1
 
-                # Small delay between sends
+                
                 await asyncio.sleep(0.5)
 
             logger.info(
                 f"[SEND-MEDIA] Complete: ✓{success} ✗{failed}"
             )
 
-            # Auto-delete command
+            
             if no_trace:
                 asyncio.create_task(
                     _auto_delete(
@@ -200,7 +200,7 @@ def register_media_handler(automation):
         except Exception as e:
             logger.error(f"[SEND-MEDIA] Error: {e}", exc_info=True)
 
-    # ─── del vim/vom/mus/vid "name" ──────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^del\s+(vim|vom|mus|vid)\s""", from_users=aid,
     ))
@@ -223,7 +223,7 @@ def register_media_handler(automation):
         except Exception as e:
             logger.error(f"[DEL-MEDIA] Error: {e}", exc_info=True)
 
-    # ─── list vim/vom/mus/vid/all ────────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^list\s+(vim|vom|mus|vid|all)\s*$""",
         from_users=aid,

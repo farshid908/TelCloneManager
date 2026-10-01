@@ -118,9 +118,9 @@ def _progress(title, names, done, current=None, final=False):
 
 async def _leave_one(client, target, name):
     try:
-        # Resolve from this account's own dialogs.  This supplies the entity
-        # and access hash belonging to the same session, avoiding PeerChannel
-        # cache failures and Main/clone access-hash mismatches.
+        
+        
+        
         entity = None
         target_text = str(target).strip() if target is not None else ""
         target_id = None
@@ -146,8 +146,8 @@ async def _leave_one(client, target, name):
                 break
 
         if entity is None:
-            # For a target that is not a numeric ID, allow Telethon to resolve
-            # a username/link using this clone as a final fallback.
+            
+            
             if target_id is None:
                 entity = await client.get_entity(target)
             else:
@@ -270,9 +270,9 @@ def register_back_handler(automation):
         if target_entity is None:
             logger.info("[BACK] Main/clone title lookup failed for %s; continuing per-clone scan", target)
 
-        # Keep the original target reference for per-account resolution.
-        # Passing Main's entity object to clones can fail due to access hash
-        # differences, especially for public usernames.
+        
+        
+        
         target_ref = target if target is not None else event.chat_id
 
         try:

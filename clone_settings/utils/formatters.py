@@ -16,7 +16,7 @@ def escape_md(text: str) -> str:
     if not text:
         return ""
 
-    # Only escape characters that break Telegram markdown
+    
     chars_to_escape = ['_', '*', '`', '[']
     result = text
     for char in chars_to_escape:

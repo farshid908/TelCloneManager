@@ -24,7 +24,7 @@ logger = logging.getLogger("TG-Auto")
 MEDIA_DIR = "./media"
 REGISTRY_FILE = os.path.join(MEDIA_DIR, "_registry.json")
 
-# Valid media types
+
 MEDIA_TYPES = {
     "vim": {
         "label": "Video Message",
@@ -77,9 +77,9 @@ def _save_registry(registry: Dict):
         logger.error(f"[MEDIA] Registry save failed: {e}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Save media
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def save_media_from_message(
     client: TelegramClient,
@@ -103,13 +103,13 @@ async def save_media_from_message(
 
     type_info = MEDIA_TYPES[media_type]
 
-    # Determine extension based on type
+    
     if media_type == "vim":
         ext = ".mp4"
     elif media_type == "vom":
         ext = ".ogg"
     elif media_type == "mus":
-        # Try to get original extension
+        
         ext = ".mp3"
         if message.document:
             for attr in message.document.attributes:
@@ -123,7 +123,7 @@ async def save_media_from_message(
     else:
         ext = ".bin"
 
-    # Build file path
+    
     safe_name = "".join(
         c for c in name if c.isalnum() or c in "_-"
     )
@@ -132,7 +132,7 @@ async def save_media_from_message(
 
     file_path = os.path.join(MEDIA_DIR, f"{media_type}_{safe_name}{ext}")
 
-    # Download
+    
     logger.info(
         f"[MEDIA] [{session_name}] Downloading {type_info['label']} "
         f"as '{name}'…"
@@ -147,7 +147,7 @@ async def save_media_from_message(
 
     file_size = os.path.getsize(file_path)
 
-    # Convert voice message to OGG/Opus if needed
+    
     if media_type == "vom" and not file_path.endswith(".ogg"):
         ogg_path = file_path.rsplit(".", 1)[0] + ".ogg"
         try:
@@ -167,7 +167,7 @@ async def save_media_from_message(
         except Exception as e:
             logger.warning(f"[MEDIA] OGG conversion failed: {e}")
 
-    # Convert video message to square MP4 if needed
+    
     if media_type == "vim":
         converted_path = file_path.rsplit(".", 1)[0] + "_round.mp4"
         try:
@@ -192,7 +192,7 @@ async def save_media_from_message(
         except Exception as e:
             logger.warning(f"[MEDIA] Video round conversion failed: {e}")
 
-    # Save to registry
+    
     registry = _load_registry()
     key = f"{media_type}:{safe_name}"
     registry[key] = {
@@ -217,9 +217,9 @@ async def save_media_from_message(
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Get / list / delete
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def get_media(media_type: str, name: str) -> Optional[Dict]:
     """Get a saved media by type and name."""
@@ -284,9 +284,9 @@ def delete_media(media_type: str, name: str) -> Dict:
     return {"success": True, "message": f"Deleted '{name}'"}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Send media
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def send_media(
     client: TelegramClient,
@@ -322,7 +322,7 @@ async def send_media(
 
     try:
         if media_type == "vom":
-            # Voice message
+            
             await client.send_file(
                 entity,
                 file_path,
@@ -330,7 +330,7 @@ async def send_media(
                 **kwargs,
             )
         elif media_type == "vim":
-            # Video message (round/circle)
+            
             await client.send_file(
                 entity,
                 file_path,
@@ -338,7 +338,7 @@ async def send_media(
                 **kwargs,
             )
         else:
-            # Music or video — normal file send
+            
             await client.send_file(
                 entity,
                 file_path,

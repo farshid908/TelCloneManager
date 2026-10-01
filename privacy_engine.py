@@ -16,7 +16,7 @@ from telethon.tl.functions.account import (
     SetPrivacyRequest,
 )
 from telethon.tl.types import (
-    # Keys
+    
     InputPrivacyKeyProfilePhoto,
     InputPrivacyKeyPhoneNumber,
     InputPrivacyKeyStatusTimestamp,
@@ -25,7 +25,7 @@ from telethon.tl.types import (
     InputPrivacyKeyForwards,
     InputPrivacyKeyAbout,
     InputPrivacyKeySavedMusic,
-    # Input values
+    
     InputPrivacyValueDisallowAll,
     InputPrivacyValueAllowAll,
     InputPrivacyValueAllowContacts,
@@ -33,7 +33,7 @@ from telethon.tl.types import (
     InputPrivacyValueAllowChatParticipants,
     InputPrivacyValueDisallowUsers,
     InputPrivacyValueDisallowChatParticipants,
-    # Server-returned values
+    
     PrivacyValueAllowUsers,
     PrivacyValueAllowChatParticipants,
     PrivacyValueDisallowUsers,
@@ -41,14 +41,14 @@ from telethon.tl.types import (
     PrivacyValueAllowAll,
     PrivacyValueDisallowAll,
     PrivacyValueAllowContacts,
-    # Peers
+    
     InputPeerUser,
 )
 
 logger = logging.getLogger("TG-Auto")
 
 
-# Privacy key aliases
+
 PRIVACY_KEYS = {
     "photo":    InputPrivacyKeyProfilePhoto,
     "phone":    InputPrivacyKeyPhoneNumber,
@@ -71,9 +71,9 @@ def get_privacy_key(name: str):
     return key_class()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Read existing privacy
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def get_current_allowed(client, key):
     """
@@ -105,9 +105,9 @@ async def get_current_allowed(client, key):
     return allowed_users, allowed_chats, base_rule
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Build InputPeerUsers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _build_input_peers(client, user_ids):
     """Convert user IDs to InputPeerUser objects."""
@@ -124,9 +124,9 @@ async def _build_input_peers(client, user_ids):
     return peers
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Show / Hide
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def show_to_targets(
     client,
@@ -153,14 +153,14 @@ async def show_to_targets(
         logger.warning(f"[PRIVACY] [{session_name}] No targets to add")
         return False
 
-    # Get current whitelist
+    
     current_users, current_chats, _ = await get_current_allowed(client, key)
 
-    # Merge
+    
     merged_users = set(current_users) | set(user_ids)
     merged_chats = set(current_chats) | set(chat_ids)
 
-    # Telegram evaluates privacy exceptions before the base rule.
+    
     rules = []
 
     if merged_chats:
@@ -246,9 +246,9 @@ async def hide_from_targets(
         return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Force hide all
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def force_hide_all(
     client,
@@ -481,9 +481,9 @@ async def apply_saved_main_photo_targets(automation) -> dict:
     return {"applied": 0, "failed": len(user_ids) + len(chat_ids)}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Get privacy status (readable)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def get_privacy_status_readable(
     client,

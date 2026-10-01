@@ -66,25 +66,25 @@ async def forward_via_bridge(
     if not clone_clients:
         return False
 
-    # ─── Get source entity ──────────────────────────────────────
+    
     try:
         source_entity = await main_client.get_entity(entity_id)
     except Exception as e:
         logger.error(f"[BRIDGE] Can't get source entity {entity_id}: {e}")
         return False
 
-    # ─── Get bridge entity ──────────────────────────────────────
+    
     try:
         bridge_entity = await main_client.get_entity(bridge_group_id)
     except Exception as e:
         logger.error(f"[BRIDGE] Can't get bridge group {bridge_group_id}: {e}")
         return False
 
-    # ─── Find a message to forward ──────────────────────────────
+    
     marker_msg = None
     sent_by_us = False
 
-    # Try to get a recent message from source
+    
     try:
         history = await main_client.get_messages(source_entity, limit=1)
         if history and len(history) > 0 and history[0] is not None:
@@ -96,10 +96,10 @@ async def forward_via_bridge(
     except Exception as e:
         logger.debug(f"[BRIDGE] Can't fetch history: {e}")
 
-    # If no history, send a marker
+    
     if marker_msg is None:
         try:
-            # Non-empty, non-emoji-only message
+            
             marker_msg = await main_client.send_message(
                 source_entity, "bridge_marker_ping"
             )
@@ -116,7 +116,7 @@ async def forward_via_bridge(
         logger.error("[BRIDGE] No message available to forward")
         return False
 
-    # ─── Forward marker to bridge group ─────────────────────────
+    
     try:
         await main_client(ForwardMessagesRequest(
             from_peer=source_entity,
@@ -128,7 +128,7 @@ async def forward_via_bridge(
         logger.info(f"[BRIDGE] Forwarded marker to bridge group")
     except FloodWaitError as e:
         logger.warning(f"[BRIDGE] FloodWait {e.seconds}s during forward")
-        # Clean up sent marker
+        
         if sent_by_us:
             try:
                 await main_client.delete_messages(source_entity, [marker_msg.id])
@@ -144,17 +144,17 @@ async def forward_via_bridge(
                 pass
         return False
 
-    # ─── Wait a bit for update propagation ──────────────────────
+    
     logger.info("[BRIDGE] Waiting 3s for update propagation…")
     await asyncio.sleep(3)
 
-    # ─── Force clones to refresh their dialogs (updates cache) ──
+    
     logger.info(
         f"[BRIDGE] Refreshing dialogs on {len(clone_clients)} clone(s)…"
     )
     await _fetch_dialogs_on_clones(clone_clients, clone_names, limit=30)
 
-    # ─── Delete the marker we sent ──────────────────────────────
+    
     if sent_by_us:
         try:
             await main_client.delete_messages(source_entity, [marker_msg.id])
@@ -162,7 +162,7 @@ async def forward_via_bridge(
         except Exception as e:
             logger.debug(f"[BRIDGE] Can't delete marker: {e}")
 
-    # ─── Verify clones can resolve now ──────────────────────────
+    
     success = 0
     for client, name in zip(clone_clients, clone_names):
         try:
@@ -198,7 +198,7 @@ async def prepare_entity_for_clones(
     if not clone_clients:
         return {"success": False, "method": "no_clones", "target": entity_id}
 
-    # ─── Check 1: are clones already OK? ────────────────────────
+    
     already_ok = 0
     for client in clone_clients:
         try:
@@ -214,7 +214,7 @@ async def prepare_entity_for_clones(
             "target": entity_id,
         }
 
-    # ─── Check 2: does target have @username? ──────────────────
+    
     username = await get_username_from_main(main_client, entity_id)
     if username:
         logger.info(f"[BRIDGE] Entity has public username: {username}")
@@ -224,7 +224,7 @@ async def prepare_entity_for_clones(
             "target": username,
         }
 
-    # ─── Check 3: forward via bridge group ─────────────────────
+    
     if bridge_group_id is not None:
         logger.info(
             f"[BRIDGE] No username — trying bridge forward for {entity_id}"

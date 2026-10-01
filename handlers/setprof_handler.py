@@ -49,14 +49,14 @@ def _is_supported_media(message) -> bool:
     if message.photo:
         return True
     if message.video:
-        # Check duration ≤ 10 seconds (Telegram profile video limit)
+        
         try:
             for attr in message.video.attributes:
                 if hasattr(attr, "duration"):
                     return attr.duration <= 11
         except Exception:
             pass
-        return True  # allow anyway
+        return True  
     return False
 
 
@@ -78,7 +78,7 @@ def register_setprof_handler(automation):
 
             no_watermark = parsed["no_watermark"]
 
-            # Must be a reply
+            
             if not event.is_reply:
                 warn = await event.reply(
                     "⚠️ Reply to a photo or short video (≤10s) with:\n"
@@ -120,7 +120,7 @@ def register_setprof_handler(automation):
                 )
                 return
 
-            # ─── Download the media once ────────────────────────
+            
             temp_dir = tempfile.mkdtemp(prefix="tg_setprof_")
             try:
                 logger.info(
@@ -139,7 +139,7 @@ def register_setprof_handler(automation):
 
                 logger.info(f"[SETPROF] Downloaded: {downloaded}")
 
-                # ─── Process each clone ─────────────────────────
+                
                 results = {"success": 0, "failed": 0}
 
                 for client, name in zip(
@@ -150,10 +150,10 @@ def register_setprof_handler(automation):
                         label = _clone_name_to_label(name)
 
                         if no_watermark:
-                            # Use original file for all clones
+                            
                             file_to_upload = downloaded
                         else:
-                            # Create per-clone watermarked copy
+                            
                             wm_output = watermark_file(
                                 downloaded,
                                 text=label,
@@ -174,7 +174,7 @@ def register_setprof_handler(automation):
                                 continue
                             file_to_upload = wm_output
 
-                        # Upload as profile
+                        
                         ok = await set_profile_media(
                             client=client,
                             file_path=file_to_upload,
@@ -186,14 +186,14 @@ def register_setprof_handler(automation):
                         else:
                             results["failed"] += 1
 
-                        # Clean up per-clone watermarked file
+                        
                         if not no_watermark and file_to_upload != downloaded:
                             try:
                                 os.remove(file_to_upload)
                             except Exception:
                                 pass
 
-                        # Small delay between clones to avoid flood
+                        
                         await asyncio.sleep(1)
 
                     except Exception as e:
@@ -203,7 +203,7 @@ def register_setprof_handler(automation):
                         )
                         results["failed"] += 1
 
-                # ─── Summary ────────────────────────────────────
+                
                 mode_desc = "no watermark" if no_watermark else "with watermark"
                 logger.info(
                     f"[SETPROF] ✓ Done: {results['success']} success, "
@@ -211,13 +211,13 @@ def register_setprof_handler(automation):
                 )
 
             finally:
-                # Clean up temp dir
+                
                 try:
                     shutil.rmtree(temp_dir, ignore_errors=True)
                 except Exception:
                     pass
 
-            # ─── Auto-delete command message ────────────────────
+            
             asyncio.create_task(
                 _auto_delete_after(
                     automation.main_client, event.chat_id,

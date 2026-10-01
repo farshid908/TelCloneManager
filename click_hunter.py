@@ -29,15 +29,15 @@ from click_engine import find_matching_button
 logger = logging.getLogger("TG-Auto")
 
 
-# Config
+
 LOOP_RETRY_DELAY = 15
 FULL_SCAN_DIALOGS = 100
 FULL_SCAN_MESSAGES_PER_CHAT = 30
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Sleep with early cancel
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _interruptible_sleep(seconds: int, stop_flag: asyncio.Event):
     """Sleep that returns early if stop_flag is set."""
@@ -52,9 +52,9 @@ async def _interruptible_sleep(seconds: int, stop_flag: asyncio.Event):
         pass
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Initial scan (used once at startup)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def find_button_in_all_chats(
     client: TelegramClient,
@@ -140,9 +140,9 @@ async def click_once(
         return (False, None, None, None)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Mode 1: Normal N-click (with optional loop-forever)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def hunt_and_click(
     client: TelegramClient,
@@ -229,9 +229,9 @@ async def hunt_and_click(
     return success_count
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Mode 2: Edit-triggered click
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def hunt_and_click_on_edit(
     client: TelegramClient,
@@ -264,7 +264,7 @@ async def hunt_and_click_on_edit(
         if max_times > 0 and done_count >= max_times and not loop_mode:
             break
 
-        # Find the button once
+        
         target_msg = None
         while target_msg is None:
             if stop_flag is not None and stop_flag.is_set():
@@ -291,7 +291,7 @@ async def hunt_and_click_on_edit(
         target_msg_id = target_msg.id
         target_chat_id = target_msg.chat_id
 
-        # Initial click
+        
         if max_times == 0 or done_count < max_times:
             try:
                 await target_msg.click(row_idx, col_idx)
@@ -401,9 +401,9 @@ async def hunt_and_click_on_edit(
     return done_count
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Mode 3: Disappear mode (event-based, no continuous scanning)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def hunt_and_click_until_disappear(
     client: TelegramClient,
@@ -486,7 +486,7 @@ async def hunt_and_click_until_disappear(
             if stop_flag is not None and stop_flag.is_set():
                 return
 
-            # Refetch fresh version
+            
             try:
                 fresh_msg = await client.get_messages(
                     msg.chat_id, ids=msg.id,
@@ -520,7 +520,7 @@ async def hunt_and_click_until_disappear(
             if delay > 0:
                 await _interruptible_sleep(delay, stop_flag)
 
-    # ─── Phase 1: INITIAL scan (only once at startup) ──────────
+    
     logger.info(
         f"[HUNT-D] [{session_name}] Doing initial scan for existing button…"
     )
@@ -544,7 +544,7 @@ async def hunt_and_click_until_disappear(
     else:
         logger.info(f"[HUNT-D] [{session_name}] No existing button found")
 
-    # ─── If not loop mode, exit ─────────────────────────────────
+    
     if not loop_mode:
         logger.info(
             f"[HUNT-D] [{session_name}] Not loop mode — exiting "
@@ -555,7 +555,7 @@ async def hunt_and_click_until_disappear(
     if stop_flag is not None and stop_flag.is_set():
         return done_count
 
-    # ─── Phase 2: Listen for new messages/edits (NO scanning) ──
+    
     logger.info(
         f"[HUNT-D] [{session_name}] Now listening ONLY for new messages/edits "
         f"(no more scanning)"
@@ -597,7 +597,7 @@ async def hunt_and_click_until_disappear(
         )
         await msg_queue.put(event.message)
 
-    # Register global listeners
+    
     new_msg_handler = client.on(events.NewMessage())(_on_any_new_message)
     edit_handler = client.on(events.MessageEdited())(_on_any_edit)
 
@@ -607,17 +607,17 @@ async def hunt_and_click_until_disappear(
                 logger.info(f"[HUNT-D] [{session_name}] Stop requested")
                 break
 
-            # Wait for next button appearance
+            
             try:
                 msg = await asyncio.wait_for(msg_queue.get(), timeout=5.0)
             except asyncio.TimeoutError:
-                continue  # loop back to check stop_flag
+                continue  
 
-            # Got a message with the button — click it repeatedly
+            
             async with click_lock:
                 await _spam_click_message(msg)
 
-            # Drain duplicate signals for same message
+            
             while not msg_queue.empty():
                 try:
                     msg_queue.get_nowait()

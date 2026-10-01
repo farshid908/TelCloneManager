@@ -58,13 +58,13 @@ async def handle_bulk_action(event, data: str, automation, set_pending_input):
         await event.answer()
         return
 
-    # Sub-action for privacy
+    
     if action_type == "privacy" and len(parts) >= 4:
         sub = parts[3]
         await _bulk_privacy(event, sub, automation)
         return
 
-    # ─── Photo actions ──────────────────────────────────────────
+    
     if action_type == "photo":
         set_pending_input(event.sender_id, "bulk:photo", {"watermark": False})
         await event.edit(
@@ -91,7 +91,7 @@ async def handle_bulk_action(event, data: str, automation, set_pending_input):
         await _bulk_remove_photo(event, automation)
         return
 
-    # ─── Name actions ───────────────────────────────────────────
+    
     if action_type == "name":
         set_pending_input(event.sender_id, "bulk:name", {})
         await event.edit(
@@ -127,7 +127,7 @@ async def handle_bulk_action(event, data: str, automation, set_pending_input):
         await event.answer()
         return
 
-    # ─── Bio actions ────────────────────────────────────────────
+    
     if action_type == "bio":
         set_pending_input(event.sender_id, "bulk:bio", {})
         await event.edit(
@@ -145,9 +145,9 @@ async def handle_bulk_action(event, data: str, automation, set_pending_input):
     await event.answer(f"❓ Unknown bulk action: {action_type}", alert=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Complete text input handlers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def complete_bulk_name(event, text: str, automation):
     """Set the same first name for all clones."""
@@ -269,7 +269,7 @@ async def complete_bulk_name_template(event, template: str, automation):
 
 async def complete_bulk_bio(event, text: str, automation):
     """Set the same bio for all clones."""
-    # Truncate to 70 chars
+    
     if len(text) > 70:
         text = text[:70]
 
@@ -313,9 +313,9 @@ async def complete_bulk_bio(event, text: str, automation):
         pass
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Immediate bulk actions
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _bulk_remove_photo(event, automation):
     """Remove profile photo from all clones."""

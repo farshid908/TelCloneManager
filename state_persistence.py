@@ -29,9 +29,9 @@ _current_state = {
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Load / save state file
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def load_state_from_disk() -> Dict:
     """Load state from disk. Returns empty state on error/missing."""
@@ -50,10 +50,10 @@ def load_state_from_disk() -> Dict:
         data.setdefault("sequential", {})
         data.setdefault("hunt_clicks", {})
         data.setdefault("rep_jobs", {})
-        # Migrate loops written by older versions to the checkpoint schema.
-        # Historical sender progress cannot be reconstructed, so legacy jobs
-        # start at a clean cycle and become fully checkpointed after their
-        # next sender boundary.
+        
+        
+        
+        
         for info in data["loops"].values():
             if info.get("iteration") is None:
                 info["iteration"] = 0
@@ -125,14 +125,14 @@ def init_state():
     global _current_state
     with _state_lock:
         _current_state = load_state_from_disk()
-    # Persist any schema migration immediately so the next restart sees the
-    # normalized checkpoint structure even if no loop iteration runs first.
+    
+    
     save_state_to_disk()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Loop state management
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def make_loop_id(chat_id: int, text: str) -> str:
     return f"{chat_id}:{text}"
@@ -236,9 +236,9 @@ def get_all_loops() -> Dict:
         return dict(_current_state["loops"])
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Sequential send state management
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def register_sequential(
     chat_id: int,
@@ -302,9 +302,9 @@ def get_all_sequentials() -> Dict:
         return dict(_current_state["sequential"])
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Hunt-click state management
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def register_hunt_click(
     session_ref: str,
@@ -383,9 +383,9 @@ def get_all_hunt_clicks() -> Dict:
         return dict(_current_state["hunt_clicks"])
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# REP / REPLOOP state management
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def register_rep_job(job_id: str, info: Dict) -> str:
     """Register a REP job with a complete JSON-serializable checkpoint."""
@@ -429,9 +429,9 @@ def get_all_rep_jobs() -> Dict:
         }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Cleanup / stats
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def cleanup_stale_state(max_age_hours: int = 24):
     """Remove stale sequential/hunt-click entries older than max_age_hours."""
@@ -440,7 +440,7 @@ def cleanup_stale_state(max_age_hours: int = 24):
     total_cleaned = 0
 
     with _state_lock:
-        # Clean stale sequential sends
+        
         to_remove = []
         for seq_id, info in _current_state["sequential"].items():
             if info.get("started_at", 0) < cutoff:
@@ -451,10 +451,10 @@ def cleanup_stale_state(max_age_hours: int = 24):
             logger.info(f"[STATE] Cleaned {len(to_remove)} stale sequential(s)")
             total_cleaned += len(to_remove)
 
-        # Clean stale hunt-clicks (only non-persistent ones)
+        
         to_remove = []
         for task_id, info in _current_state["hunt_clicks"].items():
-            # Skip persistent modes — they should keep running
+            
             if (info.get("edit_mode")
                 or info.get("loop_mode")
                 or info.get("disappear_mode")):

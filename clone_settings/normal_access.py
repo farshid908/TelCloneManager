@@ -51,8 +51,8 @@ def revoke(user_id):
         if str(current.get("user_id")) != str(user_id):
             return False
         data.pop("active", None)
-    # Remove legacy per-user records too. Otherwise get_access() can
-    # immediately restore access from an old record after active is removed.
+    
+    
     data.pop(str(user_id), None)
     _save(data)
     return True

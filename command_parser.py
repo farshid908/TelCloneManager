@@ -20,9 +20,9 @@ from typing import Dict, List, Optional
 logger = logging.getLogger("TG-Auto")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Regex Patterns
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 SEND_BASIC = re.compile(
     r"""^send(?:\((?P<clones>[^)]+)\))?\s+(?P<q>["'])(?P<text>.+?)(?P=q)(?P<rest>.*)""",
@@ -177,9 +177,9 @@ AT_USERNAME_PATTERN = re.compile(
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Clone selector
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_clone_selector(raw):
     if not raw or not raw.strip():
@@ -212,9 +212,9 @@ def parse_clone_selector(raw):
     return unique if unique else None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Action / IF parsers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_actions(text):
     actions = {"click": None, "click_chain_delay": None, "reply": None}
@@ -315,9 +315,9 @@ def parse_if_structure(rest):
         return result
 
     return None
-# ─────────────────────────────────────────────────────────────────────────────
-# Send command parser
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_send_command(raw):
     m = SEND_BASIC.match(raw.strip())
@@ -359,9 +359,9 @@ def parse_send_command(raw):
     if mf:
         include_me = mf.group("flag").lower() == "+me"
 
-    # ``/N`` immediately before a click target belongs to the click chain,
-    # not to the sender cadence.  Ignore that occurrence when extracting the
-    # send-level delay, while preserving an earlier standalone ``/N``.
+    
+    
+    
     click_for_delay = CLICK_PATTERN.search(outer_flags)
     for df in DELAY_PATTERN.finditer(outer_flags):
         if click_for_delay and (
@@ -470,8 +470,8 @@ def parse_rep_command(raw):
     if mode == "reploop" and batch is None:
         batch = "1"
     if mode == "repall":
-        # repall without a suffix means one trigger per account; repallN
-        # keeps N triggers on each account before rotating to the next one.
+        
+        
         batch = batch or "1"
 
     def normalize_account(value):
@@ -485,14 +485,14 @@ def parse_rep_command(raw):
     delay_value = int(delay) if delay is not None else (0 if has_reply_chain else None)
     if timeout is not None:
         timeout_value = int(timeout)
-        # The second value is the maximum time to wait for the first reply.
-        # Zero explicitly means unlimited waiting.
+        
+        
     elif has_reply_chain and delay is not None:
-        # /N keeps a 10-second window for the first reply by default. After
-        # that first reply, the handler waits N seconds before selecting text.
+        
+        
         timeout_value = 10
     else:
-        # Preserve the historical unlimited behavior when no /N is supplied.
+        
         timeout_value = 0 if has_reply_chain else None
 
     return {
@@ -517,17 +517,17 @@ def parse_rep_command(raw):
             normalize_account(match.group("reply_account"))
             if match.group("reply_account") is not None else None
         ),
-        # Historical grammar name retained above; this value is the expected
-        # sender/user ID whose reply must be captured.
+        
+        
         "reply_sender_id": int(reply_chat_id) if reply_chat_id is not None else None,
         "line": int(re.search(r"\d+", match.group("line")).group())
         if match.group("line") else None,
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Hunt-click command parser
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_hunt_click_command(raw):
     m = HUNT_CLICK_PATTERN.match(raw.strip())
@@ -581,9 +581,9 @@ def parse_stop_click_command(raw):
     return {"button_text": button.strip() if button else None}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Direct click command parser
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_direct_click_command(raw):
     m = DIRECT_CLICK_PATTERN.match(raw.strip())
@@ -619,9 +619,9 @@ def parse_direct_click_command(raw):
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# React command parsers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_react_command(raw):
     m = REACT_PATTERN.match(raw.strip())
@@ -684,9 +684,9 @@ def parse_react_with_link_command(raw):
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Privacy command parsers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_show_prof_command(raw):
     m = SHOW_PROF_PATTERN.match(raw.strip())
@@ -712,7 +712,7 @@ def parse_show_prof_command(raw):
         "action": action,
         "scope": scope,
         "targets": targets,
-        # Kept for compatibility with older callers.
+        
         "usernames": [
             target.lstrip("@")
             for target in targets
@@ -729,9 +729,9 @@ def parse_prof_hideall_command(raw):
     return bool(PROF_HIDEALL_PATTERN.match(raw.strip()))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Set-prof command parser
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_set_prof_command(raw):
     m = SET_PROF_PATTERN.match(raw.strip())
@@ -742,9 +742,9 @@ def parse_set_prof_command(raw):
     return {"no_watermark": no_watermark}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Media command parsers (vim/vom/mus/vid)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_save_media_command(raw):
     m = SAVE_MEDIA_PATTERN.match(raw.strip())
@@ -803,18 +803,18 @@ def parse_list_media_command(raw):
     return {"media_type": None if t == "all" else t}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Stop command
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_stop_command(raw):
     m = STOP_PATTERN.match(raw.strip())
     return m.group("text") if m else None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Join target extractor
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def extract_join_target(text):
     m = INVITE_LINK_PATTERN.search(text)

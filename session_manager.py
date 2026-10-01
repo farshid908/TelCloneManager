@@ -40,9 +40,9 @@ from config import (
 logger = logging.getLogger("TG-Auto")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Samsung device profiles
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 SAMSUNG_DEVICES = [
     {"model": "SM-S928B",  "name": "Samsung Galaxy S24 Ultra"},
@@ -85,9 +85,9 @@ def get_random_samsung_device() -> Dict[str, str]:
     return random.choice(SAMSUNG_DEVICES)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# State file
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 STATE_FILE = os.path.join(SESSIONS_DIR, "_state.json")
 REPAIR_STATE_FILE = os.path.join(SESSIONS_DIR, "_repair_state.json")
@@ -222,9 +222,9 @@ async def _execute_repair_plan(plan: Dict, progress_callback=None) -> Dict:
                 SESSIONS_DIR,
                 f"_repair_{old_number}_{plan['id']}.session",
             )
-            # Persist the exact source/temporary pair before moving anything.
-            # If the process stops immediately after the move, startup can
-            # still find and continue the operation.
+            
+            
+            
             staged[str(old_number)] = temporary
             _save_repair_state(plan)
             if os.path.exists(source):
@@ -330,9 +330,9 @@ def delete_session_info(name: str):
         logger.warning("[SESSION] Cannot delete session info %s: %s", name, exc)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Phone number registry
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def normalize_phone(phone: str) -> str:
     """Normalize phone number to +XXXXXXXXX format."""
@@ -389,9 +389,9 @@ def get_used_phones() -> Dict[str, Dict]:
     return state.get("used_phones", {})
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# List sessions
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def list_all_mains() -> List[Dict]:
     """List all Main sessions (active + pending)."""
@@ -660,8 +660,8 @@ async def repair_clone_sessions(progress_callback=None) -> Dict:
         if match:
             active_by_number[int(match.group(1))] = item
 
-    # Fill missing slots by moving the current highest-numbered clone into
-    # each gap.  The source slot is removed from the active set after moving.
+    
+    
     assignments = {}
     if active_by_number:
         highest_number = max(active_by_number)
@@ -684,12 +684,12 @@ async def repair_clone_sessions(progress_callback=None) -> Dict:
             old_to_new[str(source_number)] = str(target_number)
             old_to_new[str(target_number)] = "0"
 
-    # Preserve all slots that did not move.
+    
     for number in active_by_number:
         old_to_new.setdefault(str(number), str(number))
 
-    # Any invalid or missing slot metadata must be removed, including a
-    # leftover clone5.json when Clone5.session no longer exists.
+    
+    
     all_original_numbers = set(active_by_number)
     all_original_numbers.update(
         int(match.group(1))
@@ -718,7 +718,7 @@ async def repair_clone_sessions(progress_callback=None) -> Dict:
         "old_to_new": old_to_new,
         "staged": {},
     }
-    # The complete mapping is durable before the first file is changed.
+    
     _save_repair_state(plan)
     result = await _execute_repair_plan(plan, progress_callback)
     result["commanders_checked"] = commander_report["checked"]
@@ -737,9 +737,9 @@ async def _check_commander_sessions() -> Dict:
         path_for = None
     invalid = []
     for name in names:
-        # Commanders can be either active in `sessions/` or parked in
-        # `sessions/_pending/` during commander switching. Always resolve the
-        # real path instead of checking only the active directory.
+        
+        
+        
         path = (
             str(path_for(name))
             if path_for is not None
@@ -751,9 +751,9 @@ async def _check_commander_sessions() -> Dict:
     return {"checked": len(names), "invalid": invalid}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Slot management (find next available number)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def get_used_clone_numbers() -> List[int]:
     """Get all clone numbers currently in use."""
@@ -818,9 +818,9 @@ def get_next_main_name() -> str:
     return f"commander{n - 1}"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Active Main management
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def set_active_main(new_main_name: str) -> Dict:
     """Swap the active Main session."""
@@ -888,9 +888,9 @@ def set_active_main(new_main_name: str) -> Dict:
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Convert between Main ↔ Clone
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def convert_session(source_name: str, source_type: str, target_type: str) -> Dict:
     """
@@ -973,9 +973,9 @@ def convert_session(source_name: str, source_type: str, target_type: str) -> Dic
         return {"success": False, "message": f"Convert failed: {e}"}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Session creation (multi-step)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 _pending_creations: Dict[str, Dict] = {}
 _pending_lock = threading.Lock()
@@ -1024,9 +1024,9 @@ async def start_session_creation(
 
     normalized = normalize_phone(phone)
 
-    # The registry is a cache. Do not reopen every active Telethon SQLite
-    # session here: the main bot may already hold those databases open, which
-    # causes "database is locked" and delays the OTP response.
+    
+    
+    
     existing = is_phone_used(normalized)
     if existing:
         return {
@@ -1265,9 +1265,9 @@ def cancel_session_creation(session_id: str) -> Dict:
     return {"success": True, "message": "Cancelled"}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Delete session
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def delete_session(name: str, session_type: str) -> Dict:
     """Delete a session and unregister its phone."""
@@ -1301,9 +1301,9 @@ def delete_session(name: str, session_type: str) -> Dict:
     return {"success": True, "message": f"Deleted '{name}'"}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Bridge group management
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def set_bridge_invite_link(link: str) -> Dict:
     state = load_state()
@@ -1314,9 +1314,9 @@ def set_bridge_invite_link(link: str) -> Dict:
 
 
 def get_bridge_invite_link() -> str:
-    # The environment configuration is the source of truth when present.
-    # This also makes changes in .env effective even if the legacy state file
-    # contains an empty or outdated bridge link.
+    
+    
+    
     configured_link = (BRIDGE_INVITE_LINK or "").strip()
     if configured_link:
         return configured_link

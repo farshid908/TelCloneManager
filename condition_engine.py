@@ -22,9 +22,9 @@ from config import BUTTON_CLICK_TIMEOUT
 logger = logging.getLogger("TG-Auto")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Line extraction
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def get_message_lines(message) -> List[str]:
     """Split message text by newline."""
@@ -52,41 +52,41 @@ def find_line_containing(message, keyword: str) -> Optional[str]:
     return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Condition patterns
-# ─────────────────────────────────────────────────────────────────────────────
 
-# line3 "some text"
+
+
+
+
 CONDITION_LINE_TEXT = re.compile(
     r'^line(?P<line>\d+)\s+(?P<q>["\'])(?P<text>.+?)(?P=q)$',
     re.IGNORECASE,
 )
 
-# line4 X=Y  or  line4 X>Y  or  line4 X<Y
+
 CONDITION_LINE_COMPARE = re.compile(
     r'^line(?P<line>\d+)\s+(?P<var1>[A-Z])(?P<op>==|!=|=|>=|<=|>|<)(?P<var2>[A-Z])$',
     re.IGNORECASE,
 )
 
-# line~"keyword" X=Y  →  find line by keyword, then compare
+
 CONDITION_LINE_SEARCH_COMPARE = re.compile(
     r'^line~(?P<q>["\'])(?P<keyword>.+?)(?P=q)\s+(?P<var1>[A-Z])(?P<op>==|!=|=|>=|<=|>|<)(?P<var2>[A-Z])$',
     re.IGNORECASE,
 )
 
-# line~"keyword" "text"  →  find line by keyword, then check for text
+
 CONDITION_LINE_SEARCH_TEXT = re.compile(
     r'^line~(?P<q1>["\'])(?P<keyword>.+?)(?P=q1)\s+(?P<q2>["\'])(?P<text>.+?)(?P=q2)$',
     re.IGNORECASE,
 )
 
-# any "text"  →  check any line contains text
+
 CONDITION_ANY_TEXT = re.compile(
     r'^any\s+(?P<q>["\'])(?P<text>.+?)(?P=q)$',
     re.IGNORECASE,
 )
 
-# any X=Y  →  check any line has matching X op Y
+
 CONDITION_ANY_COMPARE = re.compile(
     r'^any\s+(?P<var1>[A-Z])(?P<op>==|!=|=|>=|<=|>|<)(?P<var2>[A-Z])$',
     re.IGNORECASE,
@@ -122,9 +122,9 @@ def compare_numbers(x: float, y: float, op: str) -> bool:
     return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Condition evaluation
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def evaluate_condition(condition_str: str, message) -> bool:
     """
@@ -148,7 +148,7 @@ def evaluate_condition(condition_str: str, message) -> bool:
     for i, line in enumerate(lines, 1):
         logger.debug(f"[CONDITION]   Line {i}: {line[:60]}")
 
-    # ── line~"keyword" X=Y ───────────────────────────────────────
+    
     m = CONDITION_LINE_SEARCH_COMPARE.match(condition_str)
     if m:
         keyword = m.group("keyword")
@@ -175,7 +175,7 @@ def evaluate_condition(condition_str: str, message) -> bool:
         )
         return result
 
-    # ── line~"keyword" "text" ────────────────────────────────────
+    
     m = CONDITION_LINE_SEARCH_TEXT.match(condition_str)
     if m:
         keyword = m.group("keyword")
@@ -193,7 +193,7 @@ def evaluate_condition(condition_str: str, message) -> bool:
         )
         return result
 
-    # ── any "text" ───────────────────────────────────────────────
+    
     m = CONDITION_ANY_TEXT.match(condition_str)
     if m:
         target_text = m.group("text").lower().strip()
@@ -207,7 +207,7 @@ def evaluate_condition(condition_str: str, message) -> bool:
         logger.info(f"[CONDITION] ✗ \"{target_text}\" not found in any line")
         return False
 
-    # ── any X=Y ──────────────────────────────────────────────────
+    
     m = CONDITION_ANY_COMPARE.match(condition_str)
     if m:
         op = m.group("op")
@@ -224,7 +224,7 @@ def evaluate_condition(condition_str: str, message) -> bool:
         logger.info(f"[CONDITION] ✗ No line matches X {op} Y")
         return False
 
-    # ── line1 "hello" ────────────────────────────────────────────
+    
     m = CONDITION_LINE_TEXT.match(condition_str)
     if m:
         line_num = int(m.group("line"))
@@ -246,7 +246,7 @@ def evaluate_condition(condition_str: str, message) -> bool:
         )
         return result
 
-    # ── line4 X=Y ────────────────────────────────────────────────
+    
     m = CONDITION_LINE_COMPARE.match(condition_str)
     if m:
         line_num = int(m.group("line"))
@@ -281,9 +281,9 @@ def evaluate_condition(condition_str: str, message) -> bool:
     return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Wait for bot reply
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def wait_for_bot_reply(
     client,

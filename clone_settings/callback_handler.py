@@ -180,7 +180,7 @@ async def _run_session_repair(event, automation):
     await _show_session_settings(event, automation, 1)
     return result
 
-# Pending input states: {user_id: {"type": ..., "data": ...}}
+
 _pending_input = {}
 _callback_target = None
 _watermark_drafts = {}
@@ -352,9 +352,9 @@ async def _edit_normal_menu(event, automation, clone_idx, inline=False):
 
     if not photo_path and message is not None and message.photo:
         try:
-            # Telegram cannot change a photo message into a text message.
-            # Replace it so a clone without a photo never inherits the
-            # previous clone's image.
+            
+            
+            
             replacement = await message.answer(
                 text,
                 reply_markup=keyboard,
@@ -366,8 +366,8 @@ async def _edit_normal_menu(event, automation, clone_idx, inline=False):
             logger.debug("[NORMAL] Could not replace photo with text", exc_info=True)
 
     if photo_path and query and query.inline_message_id:
-        # Bot API inline messages cannot upload a local FSInputFile while
-        # editing. Keep the inline version as a text menu.
+        
+        
         logger.debug("[NORMAL] Keeping inline Normal menu as text")
 
     await event.edit(text, buttons=keyboard)
@@ -798,7 +798,7 @@ class _CallbackAdapter:
         return None
 
     async def delete(self):
-        # Inline messages cannot be deleted through the Bot API.
+        
         if self._query.message is not None:
             return await self._query.message.delete()
         return None
@@ -838,9 +838,9 @@ def register_callback_handlers(dispatcher):
                 or data.startswith("action:template:")
             )
             if not is_admin(user_id) and not (normal_access and normal_callback):
-                # Acknowledge the callback silently only to stop Telegram's
-                # loading indicator. No alert, edit, message, or action is
-                # sent to non-admin users.
+                
+                
+                
                 await query.answer()
                 return
 
@@ -880,10 +880,10 @@ def register_callback_handlers(dispatcher):
             else:
                 _callback_target = None
 
-            # Route the callback to its actual menu/action handler.  The
-            # previous temporary implementation edited every callback to
-            # "it's work" and then returned to the main menu, which made
-            # Clone List and all other buttons appear non-functional.
+            
+            
+            
+            
             handled = await _route_callback(
                 _CallbackAdapter(query),
                 data,
@@ -931,10 +931,10 @@ def register_callback_handlers(dispatcher):
             if pending is not None:
                 if _profile_apply_is_active():
                     return
-                # A reply bridged from Main is delivered to the Bot API as a
-                # message from the Main account, which may differ from the
-                # Main account replies may be bridged through Bot API. Accept
-                # them only while a pending input exists.
+                
+                
+                
+                
                 pending["_owner_id"] = owner_id
                 if (message.text or "").strip().lower() in (
                     "cancel",
@@ -1362,9 +1362,9 @@ async def _route_callback(event, data: str, automation) -> bool:
         try:
             await event.edit(text, buttons=keyboard)
         except Exception as exc:
-            # Telegram rejects an edit when text and markup are unchanged.
-            # Refresh still succeeded, so do not log this expected condition
-            # as a callback failure.
+            
+            
+            
             if "message is not modified" not in str(exc).lower():
                 raise
         await event.answer("🔄 Refreshed" if data == "status:refresh" else None)
@@ -1830,7 +1830,7 @@ async def _show_profile_apply_selector(event, automation, mode, clone_idx):
         },
     )
     pending = get_pending_input(owner_id)
-    # The old menu is deleted, so text input must not try to refresh it.
+    
     pending["target"] = {}
     total = len(getattr(automation, "clone_clients", []))
     keyboard = _profile_apply_keyboard(mode, clone_idx, total)
@@ -2000,8 +2000,8 @@ async def _handle_text_input(event, pending: dict):
                 clear_clone_mode_overrides,
                 save_clone_mode_field,
             )
-            # A shared Clone Mode name must not be shadowed by old per-clone
-            # overrides created by the legacy bulk-name actions.
+            
+            
             clear_clone_mode_overrides("first_name")
             save_clone_mode_field("first_name", text[:64])
             await event.reply("✅ Clone Mode name saved. Press Apply⚙ to apply it.")
@@ -2112,9 +2112,9 @@ async def _handle_normal_action(event, data: str, automation):
             if getattr(automation, "normal_mode", False)
             else "normal"
         )
-        # Mode selection is staged.  Turning the mode on must not mutate all
-        # clone profiles immediately; the user explicitly applies it with the
-        # Apply button shown in the menu.
+        
+        
+        
         save_active_mode(target_mode)
         automation.normal_mode = target_mode == "normal"
         from .menus.normal_mode import build_normal_main_menu

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Telegram bot runner — direct execution with state persistence.
 Runs the Telegram bot with Telethon + starts:
@@ -21,9 +21,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Load .env file
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _load_dotenv():
     """Load .env file into os.environ (no external dependency)."""
@@ -48,9 +48,9 @@ def _load_dotenv():
 _load_dotenv()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Imports
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 import asyncio
 import logging
@@ -98,9 +98,9 @@ setup_logging()
 logger = logging.getLogger("TG-Auto")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Constants
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 DEAD_SESSION_ERRORS = (
     AuthKeyDuplicatedError,
@@ -156,9 +156,9 @@ async def _notify_failed_clone(main_client, clone_name, reason):
         logger.debug("[SESSION] Bot notification failed", exc_info=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Config validation
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def validate_config():
     if BRIDGE_GROUP is not None:
@@ -176,9 +176,9 @@ def validate_config():
     logger.info(f"[CONFIG] AUTO_DELETE_DELAY={AUTO_DELETE_DELAY}s ✓")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Safe session discovery
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def safe_discover_sessions():
     """Discover sessions safely — never raises."""
@@ -235,9 +235,9 @@ def safe_discover_sessions():
     return main_path, clone_paths
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Automation Controller
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 class TelegramAutomation:
 
@@ -257,12 +257,12 @@ class TelegramAutomation:
             self.normal_mode = False
         self.loops = LoopRegistry()
 
-        # Status
+        
         self.bot_running = False
         self.startup_error = None
         self.main_available = False
 
-        # Reload
+        
         self._reload_requested = False
         self._reload_lock = asyncio.Lock()
         self._reload_flag_lock = threading.Lock()
@@ -274,16 +274,16 @@ class TelegramAutomation:
         self._telethon_task = None
         self._telethon_state = "stopped"
 
-        # Shutdown
+        
         self._shutdown_requested = False
 
-        # Temporary Main
+        
         self._temp_main_active = False
         self._temp_main_user_id = None
 
-    # ─────────────────────────────────────────────────────────────
-    # Admin check (supports Temp Main)
-    # ─────────────────────────────────────────────────────────────
+    
+    
+    
 
     def is_admin(self, event):
         if temp_main.active:
@@ -301,9 +301,9 @@ class TelegramAutomation:
             and event.sender_id == self._admin_user_id
         )
 
-    # ─────────────────────────────────────────────────────────────
-    # Reload support
-    # ─────────────────────────────────────────────────────────────
+    
+    
+    
 
     def _set_reload_requested(self) -> bool:
         with self._reload_flag_lock:
@@ -569,9 +569,9 @@ class TelegramAutomation:
                     report["message"] = "Sessions repaired, but bot restart failed"
                     return report
 
-                # initialize() validates the files; explicitly verify that
-                # every newly created Telethon client is connected before
-                # starting handlers and the manager bot.
+                
+                
+                
                 if not self.main_client.is_connected():
                     await self.main_client.connect()
                 if not self.main_client.is_connected():
@@ -724,13 +724,13 @@ class TelegramAutomation:
                 logger.error(f"[RELOAD-WATCHER] {e}")
                 await asyncio.sleep(5)
 
-    # ─────────────────────────────────────────────────────────────
-    # Initialization
-    # ─────────────────────────────────────────────────────────────
+    
+    
+    
 
     async def initialize(self):
-        # Resume an interrupted Session Repair before opening any Telegram
-        # clients, so the saved session/profile mapping remains consistent.
+        
+        
         try:
             from session_manager import REPAIR_STATE_FILE, repair_clone_sessions
             if os.path.isfile(REPAIR_STATE_FILE):
@@ -825,7 +825,7 @@ class TelegramAutomation:
         await self._resolve_admin_id()
         await self._load_commander_identities()
 
-        # Bridge auto-join
+        
         try:
             from session_manager import (
                 auto_join_bridge,
@@ -849,7 +849,7 @@ class TelegramAutomation:
         elif bridge_enabled:
             logger.debug("[BRIDGE-JOIN] [Main] Already processed for this invite")
 
-        # Connect clones
+        
         for cp in clone_paths:
             name = os.path.basename(cp)
             client = None
@@ -935,9 +935,9 @@ class TelegramAutomation:
         except Exception as e:
             logger.error("[PRIVACY] Default policy failed: %s", e, exc_info=True)
 
-        # The active mode is already persisted in normal_mode_data/settings.json.
-        # Do not re-apply profile names/photos on every process restart: mode
-        # switching handlers perform the actual apply operation explicitly.
+        
+        
+        
         mode = "normal" if self.normal_mode else "clone"
         logger.info(
             "[PROFILE-MODE] Startup mode restored as %s; profile apply skipped",
@@ -1014,9 +1014,9 @@ class TelegramAutomation:
                     except Exception:
                         pass
 
-    # ─────────────────────────────────────────────────────────────
-    # Resume interrupted work
-    # ─────────────────────────────────────────────────────────────
+    
+    
+    
 
     async def _resume_after_startup(self):
         await asyncio.sleep(3)
@@ -1029,9 +1029,9 @@ class TelegramAutomation:
                 except Exception as exc:
                     logger.error("[GO] Resume failed: %s", exc, exc_info=True)
 
-            # A /go job can legitimately run for hours in Normal Mode.  Do
-            # not block the rest of startup (especially loop restoration)
-            # while that job waits between clones.
+            
+            
+            
             asyncio.create_task(
                 _resume_go_in_background(), name="resume-go-join"
             )
@@ -1062,9 +1062,9 @@ class TelegramAutomation:
         except Exception as e:
             logger.error(f"[RESUME] ✗ Failed: {e}", exc_info=True)
 
-    # ─────────────────────────────────────────────────────────────
-    # Clone Manager bot
-    # ─────────────────────────────────────────────────────────────
+    
+    
+    
 
     def _start_clone_manager(self):
         """Start Clone Manager inline bot in background."""
@@ -1075,26 +1075,26 @@ class TelegramAutomation:
         except Exception as e:
             logger.error(f"[CLONE-MGR] ✗ Failed to start: {e}")
 
-    # ─────────────────────────────────────────────────────────────
-    # Main run loop
-    # ─────────────────────────────────────────────────────────────
+    
+    
+    
 
     async def run(self):
         self._event_loop = asyncio.get_running_loop()
-        # Start web dashboard (public, limited)
+        
         setup_web_logging()
         set_web_automation(self)
         run_web_server(host="0.0.0.0", port=1500)
         logger.info("[WEB] ✓ Public dashboard on http://0.0.0.0:1500")
 
-        # Start internal admin API (localhost only)
+        
         set_api_automation(self)
         run_admin_api()
 
-        # Start reload watcher
+        
         asyncio.create_task(self._reload_watcher())
 
-        # Try to initialize bot
+        
         try:
             success = await self.initialize()
         except Exception as e:
@@ -1109,7 +1109,7 @@ class TelegramAutomation:
                 register_all_handlers(self)
                 logger.info("[HANDLERS] ✓ All handlers registered")
 
-                # Initialize state persistence
+                
                 try:
                     from state_persistence import (
                         init_state, cleanup_stale_state,
@@ -1120,10 +1120,10 @@ class TelegramAutomation:
                 except Exception as e:
                     logger.error(f"[STATE] Init failed: {e}")
 
-                # Resume interrupted work
+                
                 asyncio.create_task(self._resume_after_startup())
 
-                # Start Clone Manager bot
+                
                 self._start_clone_manager()
 
                 self.bot_running = True
@@ -1159,7 +1159,7 @@ class TelegramAutomation:
                         f"{type(e).__name__}: {e}"
                     )
 
-                # Keep process alive for reload watcher / web mode
+                
                 while True:
                     await asyncio.sleep(3600)
 
@@ -1170,7 +1170,7 @@ class TelegramAutomation:
                 self.startup_error = str(e)
                 self.bot_running = False
 
-        # Web-only mode
+        
         logger.warning("=" * 60)
         logger.warning("BOT IS NOT RUNNING — Web + Admin API only mode")
         logger.warning("=" * 60)
@@ -1205,9 +1205,9 @@ class TelegramAutomation:
         except (KeyboardInterrupt, asyncio.CancelledError):
             pass
 
-    # ─────────────────────────────────────────────────────────────
-    # Graceful shutdown
-    # ─────────────────────────────────────────────────────────────
+    
+    
+    
 
     async def shutdown(self):
         self._shutdown_requested = True
@@ -1218,7 +1218,7 @@ class TelegramAutomation:
             self._temp_main_active = False
             self._temp_main_user_id = None
 
-        # Stop Clone Manager bot
+        
         try:
             from clone_settings.bot_core import stop_bot
             await stop_bot()
@@ -1245,9 +1245,9 @@ class TelegramAutomation:
         logger.info("[INIT] ✓ Shutdown complete (state preserved for resume)")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Entry Point
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def main():
     try:

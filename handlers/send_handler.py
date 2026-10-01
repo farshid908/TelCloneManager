@@ -61,8 +61,8 @@ async def _edit_status(message, text):
     try:
         await message.edit(text)
     except Exception as e:
-        # The message may already have been removed by -n, or Telegram may
-        # reject an identical edit. Neither case should stop sending.
+        
+        
         logger.debug(f"[SEND] Status edit skipped: {e}")
 
 
@@ -163,8 +163,8 @@ def register_send_handler(automation):
         if_structure = parsed["if_structure"]
         dclick_text = parsed.get("dclick_text")
         dclick_delay = parsed.get("dclick_delay", 0)
-        # When the command itself is a reply, make every sender reply to the
-        # same message in the target chat. The command flags remain unchanged.
+        
+        
         reply_to = event.reply_to_msg_id if event.is_reply else None
 
         selected_clients, selected_names = _select_clones(
@@ -200,8 +200,8 @@ def register_send_handler(automation):
             )
         initial_status_text = "\n".join(reply_lines)
 
-        # Keep one message for the whole operation: turn the command itself
-        # into the status message instead of creating a second reply.
+        
+        
         edited_command = False
         try:
             reply_msg = await event.edit(initial_status_text)
@@ -211,8 +211,8 @@ def register_send_handler(automation):
             reply_msg = await event.reply(initial_status_text)
 
         if no_trace:
-            # The command/status message is removed after five seconds, but
-            # the send task continues in the background.
+            
+            
             msgs_to_delete = []
             if reply_msg:
                 msgs_to_delete.append(reply_msg.id)
@@ -364,7 +364,7 @@ async def _execute_send_with_state(
     bridge_id = BRIDGE_GROUP
     identity_cache = {}
 
-    # Pre-bridge once before all clones send
+    
     effective_target = chat_target.send_target
     if clone_clients:
         try:
@@ -452,10 +452,10 @@ async def _execute_send_with_state(
                     return_message=loop_id is not None,
                 )
 
-            # A button click may wait for a reply for a long time. Do not
-            # block the next sender while the previous account is waiting:
-            # start each sender on schedule and let its click watcher run
-            # independently.
+            
+            
+            
+            
             if button_text and len(senders) > 1:
                 pending = []
                 for i, (c, n) in enumerate(senders):
@@ -571,8 +571,8 @@ async def _send_loop(
     resume_current_cycle = persisted.get("phase") not in {
         None, "scheduled", "cycle_completed"
     }
-    # Never allow a persisted or malformed loop interval of zero to spin the
-    # event loop and flood the target. One second is the safe lower bound.
+    
+    
     sleep_interval = max(1, int(loop_interval or 0))
     try:
         while True:
@@ -648,10 +648,10 @@ async def _send_loop(
                     "[LOOP] Reply-chain timing is per sender; next due time "
                     "is managed by the chain scheduler"
                 )
-                # Once the whole reply-triggered chain has completed, wait
-                # for the loop interval before starting a fresh chain.  The
-                # reply trigger controls progression within a chain; loopN
-                # controls the pause between complete chains.
+                
+                
+                
+                
                 logger.info(
                     f"[LOOP] Reply chain complete; sleeping {sleep_interval}s…"
                 )
@@ -662,23 +662,23 @@ async def _send_loop(
         )
     except Exception as e:
         logger.error(f"[LOOP] ✗ Error: {e}")
-        # A failed loop must not survive in persistent state and restart
-        # itself on the next startup/reload, potentially causing a new spam
-        # burst after a long outage.
+        
+        
+        
         unregister_loop(chat_id, text)
     finally:
         automation.loops.remove(key)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Resume functions
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def resume_all_loops(automation):
     from state_persistence import get_all_loops
 
-    # Startup and reload can both schedule the resume hook.  Serialize the
-    # operation so the same persisted loop cannot be materialized twice.
+    
+    
     resume_lock = getattr(automation, "_loop_resume_lock", None)
     if resume_lock is None:
         resume_lock = asyncio.Lock()
@@ -704,9 +704,9 @@ async def resume_all_loops(automation):
                 next_at = info.get("next_iteration_at", now)
                 key = make_loop_key(chat_id, text)
 
-                # A second startup/reload hook must not create another sender
-                # for the same loop.  This is the protection that prevents
-                # repeated identical messages from one clone.
+                
+                
+                
                 if automation.loops.is_active(key):
                     logger.warning(
                         f'[RESUME] Skipping duplicate active loop: '
@@ -720,10 +720,10 @@ async def resume_all_loops(automation):
                         f"[RESUME] Loop \"{text}\" overdue "
                         f"{-time_until_next:.0f}s — delaying one full interval"
                     )
-                    # Do not fire an overdue loop immediately after a long
-                    # outage/restart.  Waiting one full interval avoids a
-                    # surprise burst when the process wakes up in the
-                    # morning, while preserving the loop's normal cadence.
+                    
+                    
+                    
+                    
                     initial_sleep = max(0, params.get("loop_interval", 0))
                 else:
                     initial_sleep = time_until_next
@@ -822,9 +822,9 @@ async def _execute_reply_chain_loop(
             logger.error("[SEND] Reply-chain bridge failed: %s", exc)
 
     for index, (client, name) in enumerate(senders):
-        # Install the reply listener before sending/clicking.  The bot can
-        # answer immediately after the button click; installing it afterward
-        # loses that reply and leaves the chain stuck on Main.
+        
+        
+        
         reply_event = asyncio.Event()
         pending_reply_ids = []
         reply_handler = _make_designated_reply_handler(
@@ -856,8 +856,8 @@ async def _execute_reply_chain_loop(
                 )
                 return
 
-            # The handler also checks the exact reply target, but the message
-            # id is only known after sending, so update its target now.
+            
+            
             reply_handler.reply_to_id = sent.id
             if sent.id in pending_reply_ids:
                 reply_event.set()
@@ -919,11 +919,11 @@ async def resume_all_sequentials(automation):
         logger.info("[RESUME] No sequential sends to resume")
         return
 
-    # Sequential sends are one-shot operations, not durable jobs.  Resuming
-    # a stale send after a long outage can replay dozens of old messages and
-    # create a spam burst.  Drop unfinished persisted sequentials on startup;
-    # newly issued commands still run normally and persist only for crash
-    # diagnostics during their current process lifetime.
+    
+    
+    
+    
+    
     stale_count = len(sequentials)
     for seq_id in sequentials:
         unregister_sequential(seq_id)

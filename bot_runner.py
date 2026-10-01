@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Standalone bot runner.
 Runs the Telegram bot as an independent process.
@@ -11,9 +11,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Auto-install dependencies
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _auto_install():
     import subprocess
@@ -48,9 +48,9 @@ def _auto_install():
 _auto_install()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Imports
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 import asyncio
 import json
@@ -81,9 +81,9 @@ from state_persistence import (
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Logging setup — also write to file for dashboard
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 setup_logging()
 logger = logging.getLogger("TG-Auto")
@@ -98,9 +98,9 @@ file_handler.setLevel(logging.INFO)
 logging.getLogger().addHandler(file_handler)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Shared status file
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 STATUS_FILE = os.path.join(BASE_DIR, "bot_status.json")
 
@@ -133,9 +133,9 @@ def write_status(bot):
         logger.error(f"[STATUS] Write failed: {e}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Automation Controller
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 class TelegramAutomation:
 
@@ -155,8 +155,8 @@ class TelegramAutomation:
         self.loops: LoopRegistry = LoopRegistry()
 
     async def initialize(self):
-        # Resume an interrupted Session Repair before opening any Telegram
-        # clients, so the saved session/profile mapping remains consistent.
+        
+        
         try:
             from session_manager import REPAIR_STATE_FILE, repair_clone_sessions
             if os.path.isfile(REPAIR_STATE_FILE):
@@ -282,7 +282,7 @@ class TelegramAutomation:
     async def run(self):
         await self.initialize()
 
-        # Optional lightweight web/admin interfaces
+        
         try:
             setup_web_logging()
             set_web_automation(self)
@@ -333,9 +333,9 @@ class TelegramAutomation:
         logger.info("[INIT] ✓ Shutdown complete")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Entry point
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def main():
     bot = TelegramAutomation()

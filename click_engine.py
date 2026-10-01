@@ -10,23 +10,23 @@ from config import BUTTON_CLICK_TIMEOUT
 
 logger = logging.getLogger("TG-Auto")
 
-# Pattern for coordinate-based click like "A1", "B2", "C3"
+
 COORD_PATTERN = re.compile(r'^([A-Za-z])(\d+)$')
 
-# Max rows/cols supported (safety guard)
-MAX_ROW_INDEX = 25  # A-Z
+
+MAX_ROW_INDEX = 25  
 MAX_COL_INDEX = 99
 
-# Chained-click timing.  A ``/>`` transition gives the bot time to edit the
-# message and expose the next keyboard.  The optional /N prefix is the small
-# delay before watching for that edit; the edit itself has its own timeout.
+
+
+
 DEFAULT_CHAIN_EDIT_TIMEOUT = 20
 DEFAULT_CHAIN_DELAY = 5
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Parsers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def parse_sequential_steps(raw: str) -> List[str]:
     """
@@ -107,9 +107,9 @@ def parse_coordinate(target: str) -> Optional[Tuple[int, int]]:
     return (row_index, col_index)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Button matching
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def get_text_match_rank(button_label: str, target_text: str) -> int:
     """
@@ -190,7 +190,7 @@ def find_matching_button(
             result = find_button_by_coordinate(message, row_idx, col_idx)
             if result:
                 r_idx, c_idx, button, coord_str = result
-                # Coordinate beats any text match at same or lower priority
+                
                 if (priority_idx > best_priority_idx
                         or (priority_idx == best_priority_idx
                             and 100 > best_match_type)):
@@ -236,9 +236,9 @@ def describe_button_layout(message) -> str:
     return "\n".join(lines)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Click execution
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def try_click_message(
     message,
@@ -299,9 +299,9 @@ async def try_click_message(
         return (False, None)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Polling helper
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _poll_for_edits(
     client: TelegramClient,
@@ -366,9 +366,9 @@ async def _poll_for_edits(
         pass
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Single step handler
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _handle_single_step_click(
     client: TelegramClient,
@@ -400,7 +400,7 @@ async def _handle_single_step_click(
         f"(timeout: {timeout}s)"
     )
 
-    # Phase 1: Check existing recent messages
+    
     try:
         messages = await client.get_messages(chat_id, limit=5)
         for msg in messages:
@@ -433,7 +433,7 @@ async def _handle_single_step_click(
             f"[CLICK] [{session_name}] Existing message check failed: {e}"
         )
 
-    # Phase 2: Listen for new messages AND edits
+    
     found_event = asyncio.Event()
     result = {"success": False, "clicked_id": None}
 
@@ -537,9 +537,9 @@ async def _handle_single_step_click(
     return (result["success"], result["clicked_id"])
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Master orchestrator
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def handle_button_click(
     client: TelegramClient,
@@ -637,7 +637,7 @@ async def handle_button_click(
             total_success = False
             break
 
-        # Update after_msg_id for next step
+        
         if clicked_id is not None:
             current_after_msg_id = clicked_id
 

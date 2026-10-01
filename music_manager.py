@@ -46,7 +46,7 @@ def save_music_file(filename: str, data: bytes) -> Dict:
     """Save an uploaded music file."""
     ensure_music_dir()
 
-    # Validate extension
+    
     ext = os.path.splitext(filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         return {
@@ -54,7 +54,7 @@ def save_music_file(filename: str, data: bytes) -> Dict:
             "message": f"Only {', '.join(ALLOWED_EXTENSIONS)} files allowed",
         }
 
-    # Validate size
+    
     size_mb = len(data) / (1024 * 1024)
     if size_mb > MAX_FILE_SIZE_MB:
         return {
@@ -62,7 +62,7 @@ def save_music_file(filename: str, data: bytes) -> Dict:
             "message": f"File too large ({size_mb:.1f} MB, max {MAX_FILE_SIZE_MB} MB)",
         }
 
-    # Sanitize filename
+    
     safe_name = "".join(c for c in filename if c.isalnum() or c in "._- ")
     if not safe_name.endswith(ext):
         safe_name = safe_name + ext
@@ -85,7 +85,7 @@ def save_music_file(filename: str, data: bytes) -> Dict:
 
 def delete_music_file(filename: str) -> Dict:
     """Delete a music file."""
-    # Sanitize
+    
     safe_name = "".join(c for c in filename if c.isalnum() or c in "._- ")
     fpath = os.path.join(MUSIC_DIR, safe_name)
 

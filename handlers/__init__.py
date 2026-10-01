@@ -28,8 +28,8 @@ from command_footer import register_command_footer
 
 def register_all_handlers(automation):
     """Register all command handlers with the main client."""
-    # Run first so command events have their original text attached before
-    # any command handler edits the status message.
+    
+    
     register_command_footer(automation)
     register_go_handler(automation)
     register_back_handler(automation)

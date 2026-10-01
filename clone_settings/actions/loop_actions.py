@@ -44,13 +44,13 @@ async def _stop_all_loops(event, automation):
 
     count = len(automation.loops.active)
 
-    # Get keys before cancelling (for state cleanup)
+    
     all_keys = list(automation.loops.active.keys())
 
-    # Cancel all
+    
     cancelled = await automation.loops.cancel_all()
 
-    # Clean state persistence
+    
     try:
         from state_persistence import unregister_loop
         for chat_id, text in all_keys:
@@ -63,7 +63,7 @@ async def _stop_all_loops(event, automation):
 
     logger.info(f"[CLONE-MGR] ✓ Stopped {cancelled} loop(s)")
 
-    # Refresh menu
+    
     from ..menus.bulk_actions import build_bulk_menu
     text, keyboard = build_bulk_menu(automation)
 
@@ -82,7 +82,7 @@ async def _toggle_mirror(event, automation):
 
     logger.info(f"[CLONE-MGR] Mirror mode → {state_str}")
 
-    # Refresh menu
+    
     from ..menus.bulk_actions import build_bulk_menu
     text, keyboard = build_bulk_menu(automation)
 

@@ -21,15 +21,15 @@ logger = logging.getLogger("TG-Auto")
 
 CLICK_AUTO_DELETE_DELAY = 5.0
 
-# Parse telegram message link
+
 TG_LINK_RE = re.compile(
     r'https?://t\.me/(?:c/(?P<chat_id>\d+)|(?P<username>\w+))/(?P<msg_id>\d+)'
 )
 
-# Parse the full command:
-# click "btn"
-# click(all) "btn" LINK -m -n
-# click(1 3 5) "btn" LINK -m
+
+
+
+
 DIRECT_CLICK_RE = re.compile(
     r"""^click(?:\((?P<clones>[^)]*)\))?\s*(?:/(?P<chain_delay>\d+)\s+)?(?P<q>["'])(?P<button>.+?)(?P=q)(?:\s+(?P<rest>.+))?\s*$""",
     re.IGNORECASE | re.DOTALL,
@@ -53,9 +53,9 @@ CLICK_COUNT_RE = re.compile(
 NO_MAIN_RE = re.compile(r'-m\b', re.IGNORECASE)
 NO_TRACE_RE = re.compile(r'-n\b', re.IGNORECASE)
 
-# Repeated click mode which stops as soon as the target message is edited:
-#   click() "A1" /edit50
-#   click(2) "A1" /edit50
+
+
+
 EDIT_REPEAT_RE = re.compile(r'^/edit(?P<count>\d+)$', re.IGNORECASE)
 
 
@@ -65,7 +65,7 @@ def _message_link(entity, chat_id, message_id):
     if username:
         return f"https://t.me/{username}/{message_id}"
 
-    # Telegram's private supergroup links omit the -100 prefix.
+    
     raw_id = str(chat_id)
     if raw_id.startswith("-100"):
         raw_id = raw_id[4:]
@@ -160,8 +160,8 @@ async def _repeat_until_edit(
                 )
                 break
 
-            # Give Telethon a chance to dispatch MessageEdited before the
-            # next click. This also prevents an unnecessary burst of clicks.
+            
+            
             try:
                 await asyncio.wait_for(edited.wait(), timeout=0.35)
             except asyncio.TimeoutError:
@@ -268,20 +268,20 @@ def _build_session_list(automation, clone_indices, include_main):
     sessions = []
 
     if clone_indices is None:
-        # No parens: only Main (unless -m)
+        
         if include_main:
             sessions.append((automation.main_client, "Main"))
         return sessions
 
     if clone_indices == "all":
-        # click(all): Main + all clones
+        
         if include_main:
             sessions.append((automation.main_client, "Main"))
         for c, n in zip(automation.clone_clients, automation.clone_names):
             sessions.append((c, n))
         return sessions
 
-    # click(1 3 5): Main + specific clones
+    
     if include_main:
         sessions.append((automation.main_client, "Main"))
 
@@ -402,11 +402,11 @@ async def _click_on_message_for_session(
     Each session needs to resolve the message independently.
     """
     try:
-        # Get the message from this session's perspective
+        
         try:
             entity = await client.get_entity(chat_id)
         except Exception:
-            # Try with -100 prefix
+            
             try:
                 entity = await client.get_entity(int(f"-100{chat_id}"))
             except Exception as e:
@@ -460,9 +460,9 @@ def register_direct_click_handler(automation):
     aid = automation._admin_user_id
 
     @automation.main_client.on(events.NewMessage(
-        # Do not let the single-click handler consume click-count commands
-        # such as ``click3() "B1" /10``.  Those belong exclusively to the
-        # repeat-click handler below.
+        
+        
+        
         pattern=r"""(?i)^click(?!\d)[\s(]""",
         from_users=aid,
     ))
@@ -473,9 +473,9 @@ def register_direct_click_handler(automation):
 
             raw = event.raw_text.strip()
 
-            # Keep this guard in the callback as well as in the event
-            # pattern.  It prevents accidental double handling if another
-            # handler or a Telethon pattern change lets the event through.
+            
+            
+            
             if REPEAT_CLICK_RE.match(raw) or CLICK_COUNT_RE.match(raw):
                 logger.debug(
                     "[CLICK-DIRECT] Ignoring repeat-click command: %s",
@@ -485,11 +485,11 @@ def register_direct_click_handler(automation):
 
             logger.info(f"[CLICK-DIRECT] ⚡ Command: {raw[:100]}")
 
-            # Parse command
+            
             m = DIRECT_CLICK_RE.match(raw)
             if not m:
                 logger.debug(f"[CLICK-DIRECT] Parse failed: {raw}")
-                return  # Let other handlers try
+                return  
 
             clones_raw = m.group("clones")
             button_text = m.group("button").strip()
@@ -502,23 +502,23 @@ def register_direct_click_handler(automation):
             edit_match = EDIT_REPEAT_RE.fullmatch(rest)
             edit_count = int(edit_match.group("count")) if edit_match else None
 
-            # Parse flags from rest
+            
             include_main = not bool(NO_MAIN_RE.search(rest))
             no_trace = bool(NO_TRACE_RE.search(rest))
 
-            # Remove flags from rest to get clean link
+            
             clean_rest = "" if edit_match else NO_MAIN_RE.sub("", rest)
             clean_rest = "" if edit_match else NO_TRACE_RE.sub("", clean_rest).strip()
 
-            # Parse clone selector
+            
             clone_indices = _parse_clone_selector(clones_raw)
 
-            # Determine target message
+            
             target_msg = None
             target_chat_id = None
 
             if clean_rest and TG_LINK_RE.search(clean_rest):
-                # ─── Link mode ───────────────────────────────────
+                
                 logger.info(f"[CLICK-DIRECT] Link mode: {clean_rest}")
 
                 target_msg, target_chat_id = await _resolve_link(
@@ -538,7 +538,7 @@ def register_direct_click_handler(automation):
                     return
 
             else:
-                # ─── Reply mode ──────────────────────────────────
+                
                 if not event.is_reply:
                     warn = await event.reply(
                         "⚠️ Reply to a message or provide a link:\n"
@@ -572,8 +572,8 @@ def register_direct_click_handler(automation):
                     f"[CLICK-DIRECT] Reply mode: msg={target_msg.id}"
                 )
 
-            # click() with an empty selector means: identify the clone that
-            # authored the replied-to message and use that clone only.
+            
+            
             if clones_raw is not None and not clones_raw.strip():
                 if not event.is_reply:
                     warn = await event.reply(
@@ -605,8 +605,8 @@ def register_direct_click_handler(automation):
                     automation.clone_names[owner_index],
                 )
             elif edit_count is not None and clones_raw and clones_raw.strip().isdigit():
-                # edit mode with a numeric selector means exactly that clone,
-                # not Main plus the clone (the normal click selector behavior).
+                
+                
                 clone_index = int(clones_raw.strip())
                 zero_idx = clone_index - 1
                 if not 0 <= zero_idx < len(automation.clone_clients):
@@ -639,7 +639,7 @@ def register_direct_click_handler(automation):
                 ))
                 return
 
-            # Check buttons on Main's view first
+            
             if not target_msg.buttons:
                 warn = await event.reply("⚠️ Message has no buttons")
                 asyncio.create_task(
@@ -650,15 +650,15 @@ def register_direct_click_handler(automation):
                 )
                 return
 
-            # Log session info
+            
             session_names = [n for _, n in sessions]
             logger.info(
                 f"[CLICK-DIRECT] Sessions: {', '.join(session_names)} "
                 f"→ button \"{button_text}\" on msg {target_msg.id}"
             )
 
-            # Special repeated-click mode. It intentionally runs one selected
-            # session only and stops as soon as Telegram emits MessageEdited.
+            
+            
             if edit_count is not None:
                 if len(sessions) != 1:
                     warn = await event.reply(
@@ -695,13 +695,13 @@ def register_direct_click_handler(automation):
                 ))
                 return
 
-            # Click from each session
+            
             success = 0
             failed = 0
 
             for client, session_name in sessions:
                 if session_name == "Main":
-                    # Main already has the message resolved
+                    
                     match = find_matching_button(target_msg, button_text)
                     if match:
                         row_idx, col_idx, button, _, _ = match
@@ -730,7 +730,7 @@ def register_direct_click_handler(automation):
                         )
                         failed += 1
                 else:
-                    # Clones need to resolve independently
+                    
                     ok = await _click_on_message_for_session(
                         client=client,
                         session_name=session_name,
@@ -744,15 +744,15 @@ def register_direct_click_handler(automation):
                     else:
                         failed += 1
 
-                # Small delay between sessions
+                
                 await asyncio.sleep(0.3)
 
             logger.info(
                 f"[CLICK-DIRECT] Complete: ✓{success} ✗{failed}"
             )
 
-            # Auto-delete command
-            if no_trace or True:  # always delete click commands
+            
+            if no_trace or True:  
                 asyncio.create_task(
                     _auto_delete_after(
                         automation.main_client, event.chat_id,
@@ -807,8 +807,8 @@ def register_direct_click_handler(automation):
             automation, clones_raw, target_msg
         )
 
-        # An empty selector means all clones. A non-empty selector with an
-        # invalid number should be reported instead of silently doing nothing.
+        
+        
         if clones_raw and not sessions:
             warn = await event.reply("⚠️ No valid clone selected.")
             asyncio.create_task(_auto_delete_after(

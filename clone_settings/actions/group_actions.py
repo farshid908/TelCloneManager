@@ -76,7 +76,7 @@ async def handle_group_action(event, data: str, automation, set_pending_input):
 async def complete_join_group(event, text: str, automation):
     """Complete join group after receiving link/username."""
 
-    # Parse the link
+    
     invite_hash = None
     username = None
 
@@ -88,7 +88,7 @@ async def complete_join_group(event, text: str, automation):
         if username_match:
             username = username_match.group(1)
         else:
-            # Maybe raw username
+            
             clean = text.strip().lstrip("@")
             if clean and len(clean) >= 4:
                 username = clean
@@ -156,16 +156,16 @@ async def complete_join_group(event, text: str, automation):
 async def complete_leave_group(event, text: str, automation):
     """Complete leave group after receiving link/username/ID."""
 
-    # Parse target
+    
     target = text.strip()
 
-    # Try as numeric ID
+    
     try:
         chat_id = int(target)
     except ValueError:
         chat_id = None
 
-    # Try as username
+    
     username = None
     if chat_id is None:
         username_match = USERNAME_RE.search(target)
@@ -190,7 +190,7 @@ async def complete_leave_group(event, text: str, automation):
 
     for client, name in zip(automation.clone_clients, automation.clone_names):
         try:
-            # Resolve entity
+            
             entity = None
             try:
                 if username:

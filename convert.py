@@ -4,11 +4,11 @@ from tdata_reader import read_tdata
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 
-# Directory paths
+
 TDATA_DIR = "./tdata"
 OUTPUT_DIR = "./sessions"
 
-# Create the session output directory
+
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
@@ -17,13 +17,13 @@ async def convert_single_tdata(folder_name: str, tdata_path: str):
     session_file_path = os.path.join(OUTPUT_DIR, f"{folder_name}.session")
 
     try:
-        # Extract tdata
+        
         acc = read_tdata(tdata_path)
 
-        # 1. Create a temporary client with StringSession.
+        
         string_session = acc.to_string_session()
         
-        # 2. Transfer the authorization key to the SQLite session.
+        
         async with TelegramClient(
             StringSession(string_session),
             acc.api_id,
@@ -33,11 +33,11 @@ async def convert_single_tdata(folder_name: str, tdata_path: str):
             app_version=acc.app_version or "4.16.2"
         ) as temp_client:
             
-            # Fetch account details to validate the session.
+            
             me = await temp_client.get_me()
 
             if me:
-                # 3. Save the verified session to the final .session file.
+                
                 file_client = TelegramClient(
                     session_file_path,
                     acc.api_id,

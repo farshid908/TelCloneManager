@@ -143,9 +143,9 @@ async def _start_bot(automation):
         logger.warning("[CLONE-MGR] No bot token configured — skipping")
         return
 
-    # The connected Main account is the only administrator. Resolve it here
-    # as a final source of truth instead of relying on a config username or a
-    # stale value left on the automation object after reload/repair.
+    
+    
+    
     _admin_user_id = None
     main_client = getattr(automation, "main_client", None)
     try:
@@ -226,8 +226,8 @@ async def _start_bot(automation):
 
     @command_router.message(Command("go"))
     async def _on_temp_main_go(message):
-        # Temporary Main may use /go through this Bot API chat, but receives
-        # no menu or other aiogram controls.
+        
+        
         user_id = message.from_user.id if message.from_user else None
         if not is_temp_main_user(user_id):
             return
@@ -339,9 +339,9 @@ async def _start_bot(automation):
         await message.answer(result.get("message", "Telethon restart requested"))
 
     _dispatcher.include_router(command_router)
-    # The callback module has a catch-all message handler for pending inputs.
-    # Register it after the command router so /start, /menu, /status, and
-    # /clones are handled by their dedicated command handlers first.
+    
+    
+    
     register_callback_handlers(_dispatcher)
     _register_main_reply_bridge(automation)
 
@@ -440,9 +440,9 @@ def _register_main_reply_bridge(automation):
 
     from .callback_handler import get_pending_for_users
 
-    # Listen to outgoing replies in every chat.  The reply is bridged only
-    # when the replied-to message was sent by this manager bot and a pending
-    # admin action is waiting for input.
+    
+    
+    
     @client.on(events.NewMessage(outgoing=True))
     async def _on_main_reply(event):
         message = event.message
@@ -469,9 +469,9 @@ def _register_main_reply_bridge(automation):
             pass
         bot_id = getattr(bot_entity, "id", None)
 
-        # Messages sent by Main inside the manager bot's private chat are
-        # already handled by aiogram. Do not bridge them back through
-        # Telethon, otherwise uploaded Normal/Clone photos are duplicated.
+        
+        
+        
         if bot_id is not None and event.chat_id == bot_id:
             return
 
@@ -488,11 +488,11 @@ def _register_main_reply_bridge(automation):
             )
         )
 
-        # An inline result inserted into Saved Messages is sent by the Main
-        # account itself, so Telegram does not mark the replied-to message as
-        # a message from the bot.  Accept only an active profile-input
-        # request in Main's own Saved Messages; normal bot-chat replies still
-        # require the original message to belong to the bot.
+        
+        
+        
+        
+        
         saved_message_input = (
             event.chat_id == main_user_id
             and pending.get("type") in {

@@ -125,7 +125,7 @@ def register_mirror_handler(automation):
         reply_msg = await event.reply("✅ **mirror mod on**")
         logger.info("[MIRROR] ✓ Activated")
 
-        # Auto-delete both command and response after 1 second
+        
         msgs_to_delete = [event.id]
         if reply_msg:
             msgs_to_delete.append(reply_msg.id)
@@ -150,7 +150,7 @@ def register_mirror_handler(automation):
         reply_msg = await event.reply("❌ **mirror mod off**")
         logger.info("[MIRROR] ✗ Deactivated")
 
-        # Auto-delete both command and response after 1 second
+        
         msgs_to_delete = [event.id]
         if reply_msg:
             msgs_to_delete.append(reply_msg.id)
@@ -186,7 +186,7 @@ def register_mirror_handler(automation):
         has_media = _has_media(event.message)
 
         if has_media:
-            # ── Media mirror: gif, video, audio, voice, photo, etc. ──
+            
             media_label = _get_media_type_label(event.message)
             logger.info(
                 f"[MIRROR] Mirroring {media_label} to "
@@ -209,7 +209,7 @@ def register_mirror_handler(automation):
             )
 
         elif event.raw_text:
-            # ── Text mirror ──────────────────────────────────────────
+            
             logger.info(
                 f"[MIRROR] Mirroring text to "
                 f"{len(automation.clone_clients)} clone(s)"

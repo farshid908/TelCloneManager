@@ -28,8 +28,8 @@ def register_access_handler(automation):
         if not event.is_private or not automation.is_admin(event):
             return
 
-        # The command is sent by the main account in the target user's
-        # private chat, so the recipient is the chat ID, not sender_id.
+        
+        
         user_id = event.chat_id
         if user_id is None:
             return

@@ -75,10 +75,10 @@ async def _apply_profile(
     if not client.is_connected():
         return False
 
-    # Compare text fields with Telegram before sending UpdateProfileRequest.
-    # This is important for explicit Apply: changing only a photo must not
-    # resend an unchanged name/bio, and re-applying an unchanged profile
-    # should not produce another profile mutation.
+    
+    
+    
+    
     current = None
     try:
         current = await client.get_me()
@@ -102,8 +102,8 @@ async def _apply_profile(
             if value and str(value) != str(current_values[request_key]):
                 profile_args[request_key] = value
     else:
-        # Preserve the previous behavior if Telegram cannot return the
-        # current profile; the media operation can still proceed.
+        
+        
         for key, request_key in (
             ("first_name", "first_name"),
             ("last_name", "last_name"),
@@ -152,7 +152,7 @@ def _clone_profile(settings, name, index):
     profile = dict(settings["clone"])
     clone_number = _clone_number(name, index)
     overrides = settings["clone"].get("clones", {}).get(clone_number, {})
-    # Shared Clone Mode values are authoritative for legacy settings.
+    
     if not profile.get("first_name"):
         profile.update(overrides)
     for field in ("first_name", "last_name", "bio"):
@@ -272,9 +272,9 @@ async def apply_saved_mode(
             "clone_names": [name for _, _, name in selected],
             "completed": [],
         })
-        # An explicit Apply is a user-requested re-application.  Do not let
-        # signatures left by a previous run turn that request into a batch of
-        # skips, even if the settings themselves have not changed.
+        
+        
+        
         data = load_settings()
         section = data.setdefault(mode, {})
         applied = section.get("applied_profiles")

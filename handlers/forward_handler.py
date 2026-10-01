@@ -139,8 +139,8 @@ async def _run_job(automation, parsed, target_chat_id, status_message):
             return
         async with lock:
             forward_index = choose_account(forward_account)
-            # In finite mode, omitting send(...) means Clone1.  Loop mode
-            # keeps its persisted sequential output order.
+            
+            
             default_send = "clone1" if len(accounts) > 1 else "main"
             send_index = (
                 output_index % len(accounts)

@@ -25,15 +25,15 @@ from react_engine import (
 
 logger = logging.getLogger("TG-Auto")
 
-# Link parser
+
 TG_LINK_RE = re.compile(
     r'https?://t\.me/(?:c/(?P<chat_id>\d+)|(?P<username>\w+))/(?P<msg_id>\d+)'
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _select_reactors(automation, clone_indices):
     """Build session list based on clone selector."""
@@ -101,15 +101,15 @@ async def _resolve_link_ids(client, parsed):
     return None, None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Register handlers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def register_react_handler(automation):
     """Register react handlers."""
     aid = automation._admin_user_id
 
-    # ─── react (single message) ──────────────────────────────────
+    
     @automation.main_client.on(events.NewMessage(
         pattern=r"""^react[\s(]""", from_users=aid,
     ))
@@ -151,7 +151,7 @@ def register_react_handler(automation):
                         '`react "👍"` (reply)\n'
                         '`react "❤️" https://t.me/c/123/456`'
                     )
-                    # Delete both after 2s
+                    
                     await asyncio.sleep(2)
                     try:
                         await event.delete()
@@ -177,7 +177,7 @@ def register_react_handler(automation):
                 await event.reply("⚠️ No sessions selected")
                 return
 
-            # ─── DELETE COMMAND FIRST before reacting ────────────
+            
             try:
                 await event.delete()
             except Exception:
@@ -188,7 +188,7 @@ def register_react_handler(automation):
                 f"message(s) using {len(sessions)} session(s)"
             )
 
-            # ─── Send all reactions in parallel (NO delay) ───────
+            
             random_used = set()
             results = []
             for target_chat_id, target_msg_id in targets:

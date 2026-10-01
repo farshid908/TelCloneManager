@@ -127,8 +127,8 @@ async def _join_one(client, target, name):
     except UserAlreadyParticipantError:
         return "already"
     except InviteRequestSentError:
-        # Telegram accepted the join request, but an administrator must
-        # approve it before the account becomes a participant.
+        
+        
         logger.info("[GO] %s join request submitted and is pending", name)
         return "pending"
     except FloodWaitError as exc:
@@ -151,9 +151,9 @@ async def _join_one(client, target, name):
 async def _is_already_member(client, target):
     """Check membership before sending a join request."""
     try:
-        # A private invite hash cannot be resolved without importing it.
-        # ImportChatInviteRequest already returns UserAlreadyParticipantError
-        # immediately for an existing member, so keep that fallback intact.
+        
+        
+        
         if target.get("type") == "invite":
             return False
 
@@ -276,9 +276,9 @@ async def _send_inline_status(client, bot_username, peer, reply_to_id,
             "inline_id": _serialize_inline_id(inline_id),
         }
 
-    # A user session may receive only the regular message ID. Such an inline
-    # message cannot be edited through MTProto, so replace it with a regular
-    # status message that can be updated reliably.
+    
+    
+    
     try:
         await client.delete_messages(peer, message_id)
     except Exception:
@@ -350,9 +350,9 @@ async def run_join_job(
         "delay_deadline": saved.get("delay_deadline"),
     }
     peer = None
-    # Persistent Bot API status messages are the reliable progress channel
-    # for /go jobs. Do not wait for an additional inline message in the
-    # source group before starting the clones.
+    
+    
+    
     if not state["bot_status"] and not state.get("bot_status_persistent"):
         peer = await client.get_input_entity(state["chat_id"])
     if not state["bot_status"] and isinstance(state["message_id"], int):
@@ -394,8 +394,8 @@ async def run_join_job(
                     )
                     recipients[str(recipient_id)] = status_message.message_id
                 state["bot_message_ids"] = recipients
-                # Keep the legacy fields populated for compatibility with
-                # older persisted jobs.
+                
+                
                 first_id, first_message = next(iter(recipients.items()))
                 state["bot_chat_id"] = int(first_id)
                 state["bot_message_id"] = first_message
@@ -474,8 +474,8 @@ async def run_join_job(
                 ))
                 if remaining <= 0:
                     break
-                # Progress updates are informational; avoid waking the main
-                # event loop every few seconds during a long random delay.
+                
+                
                 await asyncio.sleep(min(30, remaining))
             state["delay_deadline"] = None
             _save_state(state)
@@ -760,8 +760,8 @@ def register_go_handler(automation):
         if not raw_target and event.is_reply:
             reply_msg = await event.get_reply_message()
             raw_target = (reply_msg.text or "") if reply_msg else ""
-        # /go accepts invite links, public usernames and channel links only.
-        # A bare numeric/chat id is intentionally rejected.
+        
+        
         if raw_target.lstrip("-").isdigit():
             return
         target = (

@@ -24,9 +24,9 @@ from telethon.errors import FloodWaitError
 logger = logging.getLogger("TG-Auto")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Video info helper
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _get_video_info(file_path: str) -> Optional[dict]:
     """
@@ -74,9 +74,9 @@ def _get_video_info(file_path: str) -> Optional[dict]:
         return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Delete all existing profile photos
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _delete_all_profile_photos(
     client: TelegramClient,
@@ -145,9 +145,9 @@ async def _delete_all_profile_photos(
     return total_deleted
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Set profile media
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def set_profile_media(
     client: TelegramClient,
@@ -169,7 +169,7 @@ async def set_profile_media(
     ext = os.path.splitext(file_path)[1].lower()
     is_video = ext in {".mp4", ".mov", ".webm"}
 
-    # ─── Validate video before uploading ────────────────────────
+    
     if is_video:
         info = _get_video_info(file_path)
         if info:
@@ -181,7 +181,7 @@ async def set_profile_media(
                 f"pix_fmt={info.get('pix_fmt')}"
             )
 
-            # Check Telegram's requirements
+            
             duration = info.get("duration", 0)
             width = info.get("width", 0)
             height = info.get("height", 0)
@@ -214,15 +214,15 @@ async def set_profile_media(
                 f"trying anyway"
             )
 
-    # ─── Step 1: Delete all existing profile photos ─────────────
+    
     await _delete_all_profile_photos(client, session_name=session_name)
     await asyncio.sleep(1)
 
-    # ─── Step 2: Upload the new one ─────────────────────────────
+    
     try:
         if is_video:
-            # For video profile, use send_file first to get proper InputFile
-            # then extract it for UploadProfilePhotoRequest
+            
+            
             uploaded_video = await client.upload_file(
                 file_path,
                 part_size_kb=512,

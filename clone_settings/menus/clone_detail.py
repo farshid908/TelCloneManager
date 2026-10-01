@@ -45,7 +45,7 @@ def _get_clone_full_info(automation, clone_idx: int) -> dict:
     except Exception:
         pass
 
-    # Device model from session
+    
     try:
         session = getattr(client, "session", None)
         if session:
@@ -88,12 +88,12 @@ def build_clone_detail(automation, clone_idx: int):
     )
 
     buttons = [
-        # Profile actions
+        
         [
             ("📸 Profile", f"menu:profile:{clone_idx}"),
             ("🔒 Privacy", f"menu:privacy:{clone_idx}"),
         ],
-        # Quick actions
+        
         [
             ("✏️ Name", f"action:profile:{clone_idx}:name"),
             ("📝 Bio", f"action:profile:{clone_idx}:bio"),
@@ -102,7 +102,7 @@ def build_clone_detail(automation, clone_idx: int):
             ("👤 Username", f"action:profile:{clone_idx}:username"),
             ("🧩 Normal Mode", f"menu:normal:{clone_idx}"),
         ],
-        # Navigation
+        
         [
             ("◀️ Clone List", "menu:clone_list"),
             ("🏠 Main Menu", "menu:main"),

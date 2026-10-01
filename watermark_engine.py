@@ -22,28 +22,28 @@ from typing import Optional
 logger = logging.getLogger("TG-Auto")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Font helpers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _get_font(size: int):
     """Try to load a good font; fallback through common paths."""
     from PIL import ImageFont
 
     font_paths = [
-        # Termux/Android
+        
         "/system/fonts/Roboto-Bold.ttf",
         "/system/fonts/DroidSans-Bold.ttf",
         "/system/fonts/NotoSans-Bold.ttf",
-        # Linux
+        
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
-        # macOS
+        
         "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-        # Windows
+        
         "C:/Windows/Fonts/arialbd.ttf",
-        # Fallback by name
+        
         "arial.ttf",
     ]
 
@@ -74,9 +74,9 @@ def _find_font_file() -> Optional[str]:
     return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# FFmpeg check
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _check_ffmpeg() -> bool:
     """Check if ffmpeg is available."""
@@ -91,9 +91,9 @@ def _check_ffmpeg() -> bool:
         return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Image watermark
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def add_image_watermark(
     input_path: str,
@@ -154,14 +154,14 @@ def add_image_watermark(
             except AttributeError:
                 text_width, text_height = draw.textsize(text, font=font)
 
-        # Keep the object close to the text instead of leaving a large gap.
+        
         padding = max(4, int(min(width, height) * 0.008))
         outline_width = max(1, int(min(width, height) * 0.006))
         box_alpha = int(255 * opacity / 100)
         black = int(255 * (100 - darkness) / 100)
 
-        # Give the lower edge extra room for font descenders and stroke.
-        # Pillow's text metrics do not always include that visual space.
+        
+        
         text_layer = Image.new(
             "RGBA",
             (text_width + padding * 2, text_height + padding * 3),
@@ -225,8 +225,8 @@ def add_image_watermark(
                 radius=padding,
                 fill=(black, black, black, box_alpha),
             )
-        # Pillow's font bbox has a lower visual baseline, so lift the glyphs
-        # slightly to keep them optically centered inside the object.
+        
+        
         text_drop = -max(2, int(padding * 0.5))
         if full_vertical:
             text_x = (group.width - text_layer.width) // 2
@@ -238,7 +238,7 @@ def add_image_watermark(
         else:
             text_x = (group.width - text_layer.width) // 2
             text_y = (group.height - text_layer.height) // 2 + text_drop
-        # Keep the text layer inside the object even at Y=0 or Y=100.
+        
         text_y = max(0, min(group.height - text_layer.height, text_y))
         group.alpha_composite(text_layer, (text_x, text_y))
 
@@ -246,8 +246,8 @@ def add_image_watermark(
         center_y = height // 2 if full_vertical else int(height * y_percent / 100)
         paste_x = center_x - group.width // 2
         paste_y = center_y - group.height // 2
-        # Alpha-composite only the visible intersection to avoid errors when
-        # the configured position places the object outside the image bounds.
+        
+        
         left = max(0, paste_x)
         top = max(0, paste_y)
         right = min(width, paste_x + group.width)
@@ -275,9 +275,9 @@ def add_image_watermark(
         return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Video watermark (Telegram profile-video compatible)
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def add_video_watermark(
     input_path: str,
@@ -406,9 +406,9 @@ def add_video_watermark(
         return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Auto-detect and watermark
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def watermark_file(
     input_path: str,

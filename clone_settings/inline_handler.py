@@ -23,8 +23,8 @@ def register_inline_handlers(dispatcher):
         try:
             normal_access = can_access_normal_menu(user_id)
             if not is_admin(user_id) and not normal_access:
-                # Inline queries must be answered by Telegram's deadline, but
-                # an empty result gives non-admin users no visible response.
+                
+                
                 await query.answer(
                     results=[],
                     cache_time=0,

@@ -73,8 +73,8 @@ def register_mode_handler(automation):
 
         requested_mode = match.group(1).lower()
         requested_action = match.group(2).lower()
-        # The two modes are mutually exclusive. Turning one off activates the
-        # other, matching the switch behavior of the manager buttons.
+        
+        
         target_mode = requested_mode
         if requested_action == "off":
             target_mode = "normal" if requested_mode == "clone" else "clone"
