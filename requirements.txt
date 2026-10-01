@@ -1,0 +1,5 @@
+telethon==1.44.0
+Flask==3.0.3
+PySocks==1.7.1
+Pillow==12.3.0
+aiogram==3.31.0
