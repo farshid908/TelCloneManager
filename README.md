@@ -203,9 +203,98 @@ chmod 600 .env
 
 At minimum, `API_ID` and `API_HASH` are required for Telegram connectivity. The Clone Manager requires `CLONE_MANAGER_BOT_TOKEN`. The CLI requires a matching `ADMIN_API_TOKEN`.
 
-## Telegram sessions
+## Create Telegram sessions with `cli_client.py`
 
-Place valid Telethon session files in the configured session directory:
+You do not need to create `.session` files manually. The recommended method is
+to create every session from the interactive CLI. The CLI sends the Telegram
+login code, verifies the code, asks for a 2FA password when required, and saves
+the new session in the configured `sessions/` directory.
+
+### Step 1: Start the application
+
+Open the first terminal and start the application from the project directory:
+
+```bash
+cd /path/to/TelCloneManager
+./venv/bin/python -u main.py
+```
+
+Keep this terminal running. The CLI connects to the local admin API started by
+`main.py`. If the CLI says that the connection failed, return to this terminal
+and check that `main.py` is still running.
+
+### Step 2: Open the CLI in a second terminal
+
+Open another terminal, enter the same project directory, and run:
+
+```bash
+cd /path/to/TelCloneManager
+./venv/bin/python cli_client.py
+```
+
+You will see a menu similar to this:
+
+```text
+1. Status
+2. Logs
+3. Live logs
+4. Reload bot
+5. Packages
+6. List sessions
+7. Create session
+8. Convert session
+9. Activate main
+10. Repair sessions
+11. Set bridge link
+12. Install missing packages
+0. Exit
+```
+
+Choose `7` (`Create session`).
+
+### Step 3: Create the first Main session
+
+When the CLI asks:
+
+```text
+Type #:
+```
+
+enter:
+
+```text
+1
+```
+
+Then enter the phone number in international format, including the `+` sign:
+
+```text
++1234567890
+```
+
+Telegram will send a login code to the Telegram app or another active session.
+Enter that code when the CLI asks for it.
+
+If the account has two-step verification enabled, the CLI will ask for the
+existing 2FA password. Enter it when prompted. The CLI can also offer to set a
+new 2FA password; answer `y` only if you intentionally want to enable 2FA on
+this account.
+
+When the operation succeeds, the CLI creates the Main session and asks whether
+to reload the bot. Answer `Y` to reload, or `n` and reload later from the menu.
+
+### Step 4: Create Clone sessions
+
+Run `Create session` again by choosing `7`. This time enter:
+
+```text
+2
+```
+
+Enter the phone number for the clone account and complete the Telegram code and
+2FA prompts. Repeat this process for every clone account you want to add.
+
+The application will save sessions similar to:
 
 ```text
 sessions/main_commander.session
@@ -213,7 +302,18 @@ sessions/Clone1.session
 sessions/Clone2.session
 ```
 
-The main session name must match `MAIN_SESSION_NAME`. Clone sessions are discovered from the same directory. Session files are private authentication credentials and must never be uploaded to GitHub.
+The actual names are assigned by the session manager. Do not rename these files
+manually. Session files are private authentication credentials and must never be
+uploaded to GitHub.
+
+### Step 5: Check the sessions
+
+In the CLI menu, choose `6` (`List sessions`). Confirm that the Main session and
+the expected Clone sessions are listed. If more than one Main session exists,
+choose `9` (`Activate main`) and select the Main session that should be active.
+
+After creating or activating sessions, reload the bot from the CLI when it asks
+you to do so. Do not run two copies of the bot at the same time.
 
 ## Start the bot
 
@@ -315,5 +415,7 @@ Check the installed package versions:
 ```
 
 Do not use `pip` against the system Python on modern Ubuntu installations. Use the project virtual environment to avoid PEP 668 and system-package conflicts.
+
+## Bug Reports and Ideas
 
 If you find a bug or have a new idea for an improvement, please contact `@BrainOs1` on Telegram.

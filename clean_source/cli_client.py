@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 CLI client for the internal admin API.
 
@@ -46,9 +46,9 @@ _load_dotenv()
 from config import ADMIN_API_HOST, ADMIN_API_PORT, ADMIN_API_TOKEN
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Colors
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 class C:
     RESET = "\033[0m"
@@ -66,9 +66,9 @@ class C:
 BASE_URL = f"http://{ADMIN_API_HOST}:{ADMIN_API_PORT}"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# HTTP helpers
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def api_call(path, method="GET", data=None, timeout=20):
     """Make an API call."""
@@ -132,7 +132,7 @@ def _read_2fa_password(prompt=None):
         f"{C.YELLOW}2FA password (Ctrl + P to show 2FA): {C.RESET}"
     )
 
-    # Keep a safe fallback for redirected stdin and platforms without termios.
+    
     if not sys.stdin.isatty():
         return getpass.getpass(prompt)
 
@@ -164,7 +164,7 @@ def _read_2fa_password(prompt=None):
                 return "".join(value)
             if char == "\x03":
                 raise KeyboardInterrupt
-            if char == "\x10":  # Ctrl+P
+            if char == "\x10":  
                 visible = not visible
                 redraw()
                 continue
@@ -195,9 +195,9 @@ def check_connection():
     return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Commands
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def cmd_status():
     print(f"\n{C.CYAN}{C.BOLD}📊 System Status{C.RESET}")
@@ -208,7 +208,7 @@ def cmd_status():
         _show_api_error(r)
         return
 
-    # Main
+    
     main_status = f"{C.GREEN}● ONLINE{C.RESET}" if r.get("main_online") else f"{C.RED}● OFFLINE{C.RESET}"
     print(f"{C.BOLD}Main:{C.RESET} {main_status}")
     if r.get("main_name"):
@@ -218,7 +218,7 @@ def cmd_status():
         if r.get("main_id"):
             print(f"  ID: {r['main_id']}")
 
-    # Clones
+    
     total = r.get("total_clones", 0)
     online = r.get("online_clones", 0)
     print(f"\n{C.BOLD}Clones:{C.RESET} {C.GREEN}{online}{C.RESET}/{total} online")
@@ -228,11 +228,11 @@ def cmd_status():
         uname = f"@{c['username']}" if c.get("username") else "N/A"
         print(f"  {icon} #{c['index']:2} {c['name']:15} {uname}")
 
-    # Mirror
+    
     mirror = f"{C.GREEN}ON{C.RESET}" if r.get("mirror_mode") else f"{C.RED}OFF{C.RESET}"
     print(f"\n{C.BOLD}Mirror:{C.RESET} {mirror}")
 
-    # Loops
+    
     loops = r.get("loops", [])
     print(f"\n{C.BOLD}Active Loops:{C.RESET} {len(loops)}")
     for l in loops:
@@ -458,8 +458,8 @@ def cmd_make_session():
         f"\n{C.YELLOW}A Telegram login code was sent to {phone}."
         f"{C.RESET}"
     )
-    # This client never creates or changes an account's 2FA password.  It only
-    # asks for the existing password if Telegram requires it.
+    
+    
     password = None
 
     for attempt in range(1, 4):
@@ -582,7 +582,7 @@ def cmd_repair_sessions():
     print(f"  {response.get('message', '')}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 def cmd_logs(limit=50):
     print(f"\n{C.CYAN}{C.BOLD}SYSTEM LOGS - LAST {limit}{C.RESET}")
     print("-" * 72)
@@ -715,7 +715,7 @@ def dashboard_mode():
         try:
             curses.curs_set(0)
         except curses.error:
-            # Some minimal terminals do not implement cursor visibility.
+            
             pass
         stdscr.nodelay(True)
         stdscr.keypad(True)
@@ -742,7 +742,7 @@ def dashboard_mode():
             if key in (ord("q"), ord("Q"), 3):
                 return
             if key == curses.KEY_F8:
-                # Temporarily return the terminal to the regular CLI menu.
+                
                 curses.def_prog_mode()
                 curses.endwin()
                 try:
@@ -808,8 +808,8 @@ def dashboard_mode():
         pass
 
 
-# Entry point
-# ─────────────────────────────────────────────────────────────────────────────
+
+
 
 def main():
     parser = argparse.ArgumentParser(
