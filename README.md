@@ -418,3 +418,7 @@ of the GPL-3.0 license. When redistributing or publishing modified versions,
 preserve the original copyright notice, license information, and project
 attribution. Modified versions must clearly state that they have been modified.
 See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE) for the full terms and attribution.
+
+## Telegram Command Reference
+
+For the list of commands available inside Telegram, please visit the following channel in Telegram: @clone_manager_wiki
