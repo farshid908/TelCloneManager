@@ -408,3 +408,13 @@ Do not use `pip` against the system Python on modern Ubuntu installations. Use t
 ## Bug Reports and Ideas
 
 If you find a bug or have a new idea for an improvement, please contact [@GodOfArak](https://t.me/GodOfArak) on Telegram.
+
+## License
+
+TelCloneManager is licensed under the **GNU General Public License v3.0**.
+
+You may use, study, modify, and redistribute this software under the terms
+of the GPL-3.0 license. When redistributing or publishing modified versions,
+preserve the original copyright notice, license information, and project
+attribution. Modified versions must clearly state that they have been modified.
+See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE) for the full terms and attribution.
