@@ -28,6 +28,7 @@ from flask import (
     send_file,
     abort,
 )
+from waitress import serve
 
 from config import WEB_PASSWORD, WEB_SECRET_KEY
 from music_manager import (
@@ -574,11 +575,10 @@ def api_music_stream(filename):
 
 def run_web_server(host="0.0.0.0", port=1500):
     thread = threading.Thread(
-        target=lambda: app.run(
+        target=lambda: serve(
+            app,
             host=host,
             port=port,
-            debug=False,
-            use_reloader=False,
         ),
         daemon=True,
         name="WebDashboard",
