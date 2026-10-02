@@ -4,19 +4,6 @@ Telegram automation software for managing a main Telegram account and multiple c
 
 > ⚠️ **WARNING: Misuse of this source code, including unauthorized automation, abusive behavior, or spam, may result in Telegram restricting or permanently banning the account(s) involved. Use this project responsibly and comply with Telegram's Terms of Service and applicable laws.** ⚠️
 
-## Important security notice
-
-Do not commit any of the following files to GitHub:
-
-- `.env`
-- Telegram `.session` files
-- API keys, bot tokens, passwords, or SSH credentials
-- runtime state files
-- log files
-- private media or account data
-
-The repository should contain source code and public documentation only. Keep credentials and session files on the machine where the bot runs.
-
 ## Supported environments
 
 The project is designed for Python 3.10 or newer and can run on:
