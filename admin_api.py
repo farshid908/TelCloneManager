@@ -25,6 +25,7 @@ import re
 from functools import wraps
 
 from flask import Flask, jsonify, request
+from waitress import serve
 
 from config import ADMIN_API_HOST, ADMIN_API_PORT, ADMIN_API_TOKEN
 
@@ -605,11 +606,10 @@ def run_admin_api():
     )
 
     thread = threading.Thread(
-        target=lambda: api_app.run(
+        target=lambda: serve(
+            api_app,
             host=ADMIN_API_HOST,
             port=ADMIN_API_PORT,
-            debug=False,
-            use_reloader=False,
         ),
         daemon=True,
         name="AdminAPI",
