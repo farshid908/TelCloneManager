@@ -6,6 +6,8 @@ Telegram automation software for managing a main Telegram account and multiple c
 
 ## Supported environments
 
+> ⚠️ **Hosting compatibility warning:** TelCloneManager is not supported on cPanel, Plesk, DirectAdmin, shared hosting, or similar control-panel hosting environments. It requires a persistent Linux process, shell access, background services, and the ability to install and manage Python dependencies. Use a VPS or another Linux server with full process and package-manager access.
+
 The project is designed for Python 3.10 or newer and can run on:
 
 - Ubuntu and Debian-based VPS systems
