@@ -2,6 +2,8 @@
 
 Telegram automation software for managing a main Telegram account and multiple clone accounts with Telethon. The project also includes an optional web dashboard, a localhost admin API, a CLI client, media utilities, persistent loop state, and an optional aiogram-based Clone Manager.
 
+> ⚠️ **WARNING: Misuse of this source code, including unauthorized automation, abusive behavior, or spam, may result in Telegram restricting or permanently banning the account(s) involved. Use this project responsibly and comply with Telegram's Terms of Service and applicable laws.** ⚠️
+
 ## Important security notice
 
 Do not commit any of the following files to GitHub:
@@ -418,4 +420,4 @@ Do not use `pip` against the system Python on modern Ubuntu installations. Use t
 
 ## Bug Reports and Ideas
 
-If you find a bug or have a new idea for an improvement, please contact `@BrainOs1` on Telegram.
+If you find a bug or have a new idea for an improvement, please contact [@GodOfArak](https://t.me/GodOfArak) on Telegram.
