@@ -19,6 +19,9 @@ Architecture:
   - utils/               → Shared keyboards, formatters
 """
 
+__TCM_FILE_HASH__ = "6170152393"
+
+
 import logging
 
 logger = logging.getLogger("CloneManager")

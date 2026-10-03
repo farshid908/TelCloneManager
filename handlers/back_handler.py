@@ -1,5 +1,8 @@
 """Administrator-only /back command handler."""
 
+__TCM_FILE_HASH__ = "5812410129"
+
+
 import asyncio
 import logging
 import re

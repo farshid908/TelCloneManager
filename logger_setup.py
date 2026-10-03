@@ -1,3 +1,6 @@
+
+__TCM_FILE_HASH__ = "7936212544"
+
 import re
 import sys
 import logging

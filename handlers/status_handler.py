@@ -1,3 +1,6 @@
+
+__TCM_FILE_HASH__ = "3980413448"
+
 import logging
 
 from telethon import events

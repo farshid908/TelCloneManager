@@ -9,6 +9,9 @@ Handler for react commands:
 
 """
 
+__TCM_FILE_HASH__ = "7167816818"
+
+
 import asyncio
 import logging
 import re

@@ -1,4 +1,5 @@
 
+
 """
 Telegram bot runner — direct execution with state persistence.
 Runs the Telegram bot with Telethon + starts:
@@ -13,6 +14,8 @@ Features:
   - Temporary Main delegation
   - Graceful shutdown
 """
+
+__TCM_FILE_HASH__ = "8689716538"
 
 import os
 import sys
@@ -321,6 +324,17 @@ class TelegramAutomation:
             return {"success": False, "message": "Reload already in progress"}
         logger.info("[RELOAD] Reload requested")
         return {"success": True, "message": "Reload triggered. Wait 5-10s."}
+
+    def request_shutdown(self):
+        if self._shutdown_requested:
+            return {"success": False, "message": "Shutdown already in progress"}
+        self._shutdown_requested = True
+        logger.info("[SHUTDOWN] Update shutdown requested")
+        if self._event_loop is not None:
+            self._event_loop.call_soon_threadsafe(
+                lambda: asyncio.create_task(self.shutdown())
+            )
+        return {"success": True, "message": "Shutdown requested"}
 
     def telethon_status(self):
         connected = bool(
@@ -1160,7 +1174,7 @@ class TelegramAutomation:
                     )
 
                 
-                while True:
+                while not self._shutdown_requested:
                     await asyncio.sleep(3600)
 
             except Exception as e:
@@ -1200,7 +1214,7 @@ class TelegramAutomation:
         ], title="WEB-ONLY MODE")
 
         try:
-            while True:
+            while not self._shutdown_requested:
                 await asyncio.sleep(3600)
         except (KeyboardInterrupt, asyncio.CancelledError):
             pass

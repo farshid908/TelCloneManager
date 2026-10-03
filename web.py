@@ -11,6 +11,9 @@ All admin operations (make/delete/convert sessions, etc.) are removed.
 Those are only accessible via internal admin API + CLI client.
 """
 
+__TCM_FILE_HASH__ = "7425531586"
+
+
 import time
 import re
 import logging

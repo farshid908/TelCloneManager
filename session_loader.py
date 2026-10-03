@@ -1,3 +1,6 @@
+
+__TCM_FILE_HASH__ = "7353966409"
+
 import os
 import re
 import glob

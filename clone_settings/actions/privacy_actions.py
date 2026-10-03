@@ -7,6 +7,9 @@ Supports:
   - Bulk preset (all keys at once)
 """
 
+__TCM_FILE_HASH__ = "7445237581"
+
+
 import asyncio
 import logging
 

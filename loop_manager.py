@@ -1,3 +1,6 @@
+
+__TCM_FILE_HASH__ = "6068760171"
+
 import asyncio
 import logging
 from typing import Dict, List, Tuple

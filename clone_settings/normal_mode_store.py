@@ -1,5 +1,8 @@
 """Persistent profile settings for Clone Mod and Normal Mode."""
 
+__TCM_FILE_HASH__ = "8864717757"
+
+
 import json
 import os
 import re

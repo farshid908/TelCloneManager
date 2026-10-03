@@ -1,3 +1,6 @@
+
+__TCM_FILE_HASH__ = "4838259368"
+
 import os
 import asyncio
 from tdata_reader import read_tdata

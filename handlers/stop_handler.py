@@ -4,6 +4,9 @@ Stops specific loops or all loops.
 Also removes from state persistence so they don't resume after restart.
 """
 
+__TCM_FILE_HASH__ = "1128399438"
+
+
 import logging
 
 from telethon import events

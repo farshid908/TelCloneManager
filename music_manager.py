@@ -2,6 +2,9 @@
 Music manager — handles uploading and listing .m4a files for web player.
 """
 
+__TCM_FILE_HASH__ = "3425627150"
+
+
 import os
 import logging
 from typing import List, Dict

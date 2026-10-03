@@ -2,6 +2,9 @@
 Reply sender — sends a message as a reply to another message.
 """
 
+__TCM_FILE_HASH__ = "9734242528"
+
+
 import asyncio
 import logging
 from telethon.errors import FloodWaitError

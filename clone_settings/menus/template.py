@@ -1,5 +1,8 @@
 """Normal Mode template list and editor menus."""
 
+__TCM_FILE_HASH__ = "3682175942"
+
+
 from ..normal_mode_store import STORE_DIR, load_settings
 from ..utils.keyboards import make_inline_keyboard
 

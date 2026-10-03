@@ -7,6 +7,9 @@ so they can be resumed after a restart (Ctrl+C, crash, or manual reload).
 State file: sessions/_runtime_state.json
 """
 
+__TCM_FILE_HASH__ = "8001344640"
+
+
 import os
 import json
 import time

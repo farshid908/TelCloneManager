@@ -1,5 +1,8 @@
 """Telethon commands for granting and revoking Normal Mode menu access."""
 
+__TCM_FILE_HASH__ = "3415762665"
+
+
 import logging
 import re
 

@@ -13,6 +13,9 @@ Supports all commands including:
     del, list, Dclick inside send, direct click, react with link
 """
 
+__TCM_FILE_HASH__ = "3344455517"
+
+
 import re
 import logging
 from typing import Dict, List, Optional

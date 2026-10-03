@@ -1,5 +1,8 @@
 """Inline query handlers for the aiogram Clone Manager bot."""
 
+__TCM_FILE_HASH__ = "4767708375"
+
+
 import logging
 
 from aiogram import Router

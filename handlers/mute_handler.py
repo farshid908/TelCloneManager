@@ -1,5 +1,8 @@
 """Main-only notification suppression for selected groups/chats."""
 
+__TCM_FILE_HASH__ = "3920457642"
+
+
 import logging
 import re
 

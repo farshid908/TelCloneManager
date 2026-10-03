@@ -8,6 +8,9 @@ Strategy:
      Have all clones fetch dialogs to update their cache
 """
 
+__TCM_FILE_HASH__ = "2387780733"
+
+
 import asyncio
 import logging
 from typing import Optional

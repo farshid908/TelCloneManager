@@ -10,6 +10,9 @@ Supports patterns like:
     if any X=Y                        → check if ANY line has two equal numbers
 """
 
+__TCM_FILE_HASH__ = "3860344309"
+
+
 import re
 import logging
 import asyncio

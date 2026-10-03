@@ -14,6 +14,9 @@ Access is protected by:
   2. Bearer token in Authorization header
 """
 
+__TCM_FILE_HASH__ = "2880648305"
+
+
 import time
 import logging
 import threading
@@ -543,6 +546,17 @@ def api_bot_reload():
         return jsonify({"success": False, "message": "Automation not available"})
     try:
         return jsonify(_automation.request_reload())
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@api_app.route("/bot/shutdown", methods=["POST"])
+@require_token
+def api_bot_shutdown():
+    if _automation is None:
+        return jsonify({"success": False, "message": "Automation not available"})
+    try:
+        return jsonify(_automation.request_shutdown())
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 

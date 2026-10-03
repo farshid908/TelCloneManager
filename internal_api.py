@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+__TCM_FILE_HASH__ = "8060742888"
+
+
 import json
 import urllib.error
 import urllib.request

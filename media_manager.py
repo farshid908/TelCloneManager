@@ -10,6 +10,9 @@ Media types:
 All files stored in ./media/ directory with a JSON registry.
 """
 
+__TCM_FILE_HASH__ = "8661494827"
+
+
 import os
 import json
 import asyncio

@@ -14,6 +14,9 @@ Search strategy:
     (no continuous scanning — efficient and instant)
 """
 
+__TCM_FILE_HASH__ = "2719207094"
+
+
 import asyncio
 import logging
 from typing import Optional, Tuple, Set

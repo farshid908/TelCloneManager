@@ -6,6 +6,9 @@ Ensures only ONE profile picture exists at a time:
   2. Upload the new photo/video with proper metadata
 """
 
+__TCM_FILE_HASH__ = "3173069541"
+
+
 import os
 import asyncio
 import logging

@@ -1,5 +1,8 @@
 """Normal Mode menu for independent per-clone profiles."""
 
+__TCM_FILE_HASH__ = "7459613444"
+
+
 from ..normal_mode_store import load_active_mode, load_settings
 from ..utils.keyboards import make_inline_keyboard
 from ..normal_mode_store import NORMAL_MODE_DIR

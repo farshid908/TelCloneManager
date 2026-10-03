@@ -2,6 +2,9 @@
 Profile actions — change name, bio, username, photo for individual clones.
 """
 
+__TCM_FILE_HASH__ = "3695305021"
+
+
 import os
 import asyncio
 import logging

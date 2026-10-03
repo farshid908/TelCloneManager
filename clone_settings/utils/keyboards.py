@@ -1,5 +1,8 @@
 """aiogram inline keyboard builders used by the Clone Manager."""
 
+__TCM_FILE_HASH__ = "3814902873"
+
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 

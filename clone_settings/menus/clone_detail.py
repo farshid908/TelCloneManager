@@ -2,6 +2,9 @@
 Clone detail menu — shows info and actions for a single clone.
 """
 
+__TCM_FILE_HASH__ = "1730935638"
+
+
 import asyncio
 from ..utils.keyboards import make_inline_keyboard
 

@@ -2,6 +2,9 @@
 Privacy settings menu — profile photo, phone, last seen, etc.
 """
 
+__TCM_FILE_HASH__ = "9710334169"
+
+
 from ..utils.keyboards import make_inline_keyboard
 
 CLONES_PER_PAGE = 8

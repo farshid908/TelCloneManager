@@ -4,6 +4,9 @@ Resolves Telegram entities by @username (global) or integer ID (cache).
 Includes bridge fallback for private users.
 """
 
+__TCM_FILE_HASH__ = "8643833971"
+
+
 import asyncio
 import logging
 from typing import Optional, Union

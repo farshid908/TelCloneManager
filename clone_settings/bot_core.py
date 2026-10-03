@@ -6,6 +6,9 @@ The clone accounts continue to be controlled by the existing Telethon
 user clients on that same loop.
 """
 
+__TCM_FILE_HASH__ = "4393389632"
+
+
 import asyncio
 import json
 import logging

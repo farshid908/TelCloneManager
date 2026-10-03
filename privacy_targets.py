@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+__TCM_FILE_HASH__ = "7152752027"
+
+
 import json
 import tempfile
 from pathlib import Path

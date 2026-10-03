@@ -1,5 +1,8 @@
 """Handlers package."""
 
+__TCM_FILE_HASH__ = "8822926508"
+
+
 from .go_handler import register_go_handler
 from .back_handler import register_back_handler
 from .send_handler import register_send_handler

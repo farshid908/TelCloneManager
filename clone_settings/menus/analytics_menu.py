@@ -2,6 +2,9 @@
 Analytics menu — stats about bot usage.
 """
 
+__TCM_FILE_HASH__ = "3828700500"
+
+
 import time
 import os
 

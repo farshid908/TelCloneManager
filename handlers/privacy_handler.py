@@ -5,6 +5,9 @@ Handler for privacy commands:
   prof hideall           — force base rule to Nobody
 """
 
+__TCM_FILE_HASH__ = "5226263148"
+
+
 import asyncio
 import logging
 

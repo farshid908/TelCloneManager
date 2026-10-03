@@ -2,6 +2,9 @@
 Main menu for Clone Manager bot.
 """
 
+__TCM_FILE_HASH__ = "9475323654"
+
+
 import os
 
 from ..utils.keyboards import make_inline_keyboard
@@ -70,6 +73,13 @@ def build_main_menu(automation, user_id=None):
         ],
         [("🔧Session Settings⚙", "menu:session_settings")],
     ]
+
+    try:
+        from updater import is_updater_running
+        if is_updater_running():
+            buttons.append([("Check for update🔁", "update:check")])
+    except Exception:
+        pass
 
     keyboard = make_inline_keyboard(buttons)
     return text, keyboard

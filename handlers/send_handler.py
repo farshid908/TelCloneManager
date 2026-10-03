@@ -2,6 +2,9 @@
 Send command handler with state persistence, bridge fallback, and Dclick support.
 """
 
+__TCM_FILE_HASH__ = "4044207550"
+
+
 import asyncio
 import logging
 import time

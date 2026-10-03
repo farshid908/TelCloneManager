@@ -1,3 +1,6 @@
+
+__TCM_FILE_HASH__ = "7533847826"
+
 import asyncio
 import logging
 import re

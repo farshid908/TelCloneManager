@@ -2,6 +2,9 @@
 Safety menu — FloodWait history, session health, dead sessions.
 """
 
+__TCM_FILE_HASH__ = "8980488806"
+
+
 import os
 import glob
 

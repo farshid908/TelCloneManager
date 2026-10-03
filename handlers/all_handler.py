@@ -1,5 +1,8 @@
 """Show groups and channels shared by Main and all clones."""
 
+__TCM_FILE_HASH__ = "2157064745"
+
+
 import asyncio
 import html
 import logging

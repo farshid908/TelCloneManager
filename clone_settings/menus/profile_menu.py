@@ -2,6 +2,9 @@
 Profile management menu — photo, name, bio, username for clones.
 """
 
+__TCM_FILE_HASH__ = "4713500418"
+
+
 from ..utils.keyboards import make_inline_keyboard
 
 CLONES_PER_PAGE = 8

@@ -2,6 +2,9 @@
 Group actions — join/leave groups for all clones.
 """
 
+__TCM_FILE_HASH__ = "4258455768"
+
+
 import asyncio
 import logging
 import re

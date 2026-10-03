@@ -1,5 +1,8 @@
 """Reply-trigger automation for Main, clones, and random account selection."""
 
+__TCM_FILE_HASH__ = "7530465937"
+
+
 import asyncio
 import logging
 import random

@@ -1,5 +1,8 @@
 """Handler for reporting Telegram chat IDs to Saved Messages."""
 
+__TCM_FILE_HASH__ = "7987170490"
+
+
 import logging
 import re
 from urllib.parse import parse_qs, urlsplit

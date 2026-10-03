@@ -10,6 +10,9 @@ Handles:
   - Slot management (reuse deleted numbers)
 """
 
+__TCM_FILE_HASH__ = "7203970743"
+
+
 import os
 import json
 import random

@@ -2,6 +2,9 @@
 Handler for media commands: save as, send, del, list (vim/vom/mus/vid).
 """
 
+__TCM_FILE_HASH__ = "8239017926"
+
+
 import asyncio
 import logging
 from telethon import events

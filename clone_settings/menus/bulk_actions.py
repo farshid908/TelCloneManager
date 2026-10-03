@@ -2,6 +2,9 @@
 Bulk actions menu — apply settings to all clones at once.
 """
 
+__TCM_FILE_HASH__ = "2200529250"
+
+
 from ..utils.keyboards import make_inline_keyboard
 
 

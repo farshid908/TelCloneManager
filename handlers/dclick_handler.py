@@ -1,5 +1,8 @@
 """Persistent button disappearance click commands."""
 
+__TCM_FILE_HASH__ = "8374655348"
+
+
 import asyncio
 import logging
 import re

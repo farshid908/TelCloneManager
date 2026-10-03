@@ -13,6 +13,9 @@ the temp main user and processes known commands:
   - +me is always disabled for temp main
 """
 
+__TCM_FILE_HASH__ = "6017736646"
+
+
 import asyncio
 import logging
 import random

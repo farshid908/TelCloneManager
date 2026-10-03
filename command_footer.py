@@ -1,5 +1,8 @@
 """Keep the original command visible on edited Telethon status messages."""
 
+__TCM_FILE_HASH__ = "4270249131"
+
+
 import html
 import logging
 

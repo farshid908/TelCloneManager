@@ -1,3 +1,6 @@
+
+__TCM_FILE_HASH__ = "4196404445"
+
 class C:
     """ANSI color codes for terminal output."""
     RESET   = "\033[0m"

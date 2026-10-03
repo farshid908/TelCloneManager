@@ -1,5 +1,8 @@
 """Clone list menu — shows phone number and Telegram user ID."""
 
+__TCM_FILE_HASH__ = "7492501645"
+
+
 import os
 
 from ..utils.keyboards import make_inline_keyboard

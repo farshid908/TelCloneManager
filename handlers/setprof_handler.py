@@ -7,6 +7,9 @@ Downloads the replied photo/video, watermarks it with the clone's name
 Main is NEVER modified — only clones.
 """
 
+__TCM_FILE_HASH__ = "2397038324"
+
+
 import os
 import asyncio
 import tempfile

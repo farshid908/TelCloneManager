@@ -1,3 +1,6 @@
+
+__TCM_FILE_HASH__ = "5938482606"
+
 import os
 import sys
 

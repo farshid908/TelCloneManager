@@ -1,5 +1,8 @@
 """Vote for a matching option in a Telegram poll."""
 
+__TCM_FILE_HASH__ = "7356474351"
+
+
 import logging
 import re
 

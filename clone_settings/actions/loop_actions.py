@@ -2,6 +2,9 @@
 Loop actions — stop all loops, toggle mirror.
 """
 
+__TCM_FILE_HASH__ = "9306154894"
+
+
 import logging
 
 from ..utils.keyboards import make_inline_keyboard

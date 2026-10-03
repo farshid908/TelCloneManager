@@ -14,6 +14,9 @@ When deactivated:
   - Loops stopped by -s are resumed
 """
 
+__TCM_FILE_HASH__ = "2035365252"
+
+
 import logging
 from typing import Optional
 

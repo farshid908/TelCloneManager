@@ -1,5 +1,8 @@
 """Callback and text-input handlers for the aiogram Clone Manager bot."""
 
+__TCM_FILE_HASH__ = "2774967214"
+
+
 import asyncio
 import logging
 import os
@@ -1737,8 +1740,13 @@ async def _handle_update_action(event, data):
         )
         return
     action = data.split(":", 1)[1]
+    request_action = {
+        "now": "update",
+        "deps_now": "deps_now",
+        "deps_remind": "deps_remind",
+    }.get(action, action)
     request_update(
-        "update" if action == "now" else action,
+        request_action,
         message.chat.id,
         message.message_id,
     )
@@ -1750,6 +1758,10 @@ async def _handle_update_action(event, data):
             buttons=None,
         )
     elif action == "remind":
+        await event.edit("Okay. I will remind you in 24 hours.", buttons=None)
+    elif action == "deps_now":
+        await event.edit("Dependency update started...", buttons=None)
+    elif action == "deps_remind":
         await event.edit("Okay. I will remind you in 24 hours.", buttons=None)
     await event.answer()
 

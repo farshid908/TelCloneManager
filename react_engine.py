@@ -10,6 +10,9 @@ Supports:
   - Per-session, per-chat reaction cache
 """
 
+__TCM_FILE_HASH__ = "2024833917"
+
+
 import asyncio
 import random
 import logging

@@ -1,5 +1,8 @@
 """Status menu — active loops and mirror state."""
 
+__TCM_FILE_HASH__ = "7846834817"
+
+
 from ..utils.keyboards import make_inline_keyboard
 
 

@@ -1,8 +1,11 @@
 
+
 """
 Standalone bot runner.
 Runs the Telegram bot as an independent process.
 """
+
+__TCM_FILE_HASH__ = "3008520809"
 
 import os
 import sys

@@ -10,6 +10,9 @@ Handler for direct click commands:
   -n flag: auto-delete command message
 """
 
+__TCM_FILE_HASH__ = "2453936433"
+
+
 import asyncio
 import logging
 import re
