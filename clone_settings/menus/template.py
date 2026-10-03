@@ -46,6 +46,13 @@ def build_template_menu(
     delegated=False,
 ):
     total = len(getattr(automation, "clone_clients", []))
+    if total <= 0:
+        return (
+            f"Template: {template_name}\n\nNo clones found.",
+            make_inline_keyboard(
+                [] if delegated else [[("💾Back&Save🔙", "menu:template")]]
+            ),
+        )
     clone_idx = max(1, min(int(clone_idx), max(total, 1)))
     profile = _profile(template_name, clone_idx)
     from ..normal_mode_store import load_active_mode

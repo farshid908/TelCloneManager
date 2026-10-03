@@ -180,7 +180,7 @@ async def _run_session_repair(event, automation):
     await _show_session_settings(event, automation, 1)
     return result
 
-
+# Pending input states: {user_id: {"type": ..., "data": ...}}
 _pending_input = {}
 _callback_target = None
 _watermark_drafts = {}
@@ -352,9 +352,9 @@ async def _edit_normal_menu(event, automation, clone_idx, inline=False):
 
     if not photo_path and message is not None and message.photo:
         try:
-            
-            
-            
+            # Telegram cannot change a photo message into a text message.
+            # Replace it so a clone without a photo never inherits the
+            # previous clone's image.
             replacement = await message.answer(
                 text,
                 reply_markup=keyboard,
@@ -366,17 +366,39 @@ async def _edit_normal_menu(event, automation, clone_idx, inline=False):
             logger.debug("[NORMAL] Could not replace photo with text", exc_info=True)
 
     if photo_path and query and query.inline_message_id:
-        
-        
+        # Bot API inline messages cannot upload a local FSInputFile while
+        # editing. Keep the inline version as a text menu.
         logger.debug("[NORMAL] Keeping inline Normal menu as text")
 
     await event.edit(text, buttons=keyboard)
 
 
 async def _edit_template_menu(event, automation, template_name, clone_idx):
-    from .menus.template import build_template_menu, template_photo_path
+    from .menus.template import (
+        build_template_list_menu,
+        build_template_menu,
+        template_photo_path,
+    )
+    from .normal_mode_store import load_settings
 
-    text, keyboard = build_template_menu(automation, template_name, clone_idx)
+    if template_name not in load_settings()["template"]["templates"]:
+        text, keyboard = build_template_list_menu(
+            delegated=can_access_normal_menu(event.sender_id)
+            and not is_admin(event.sender_id),
+        )
+        await _show_text_menu(event, text, keyboard)
+        return
+
+    delegated = can_access_normal_menu(event.sender_id) and not is_admin(
+        event.sender_id
+    )
+
+    text, keyboard = build_template_menu(
+        automation,
+        template_name,
+        clone_idx,
+        delegated=delegated,
+    )
     photo_path = template_photo_path(template_name, clone_idx)
     query = getattr(event, "_query", None)
     message = getattr(query, "message", None) if query else None
@@ -798,7 +820,7 @@ class _CallbackAdapter:
         return None
 
     async def delete(self):
-        
+        # Inline messages cannot be deleted through the Bot API.
         if self._query.message is not None:
             return await self._query.message.delete()
         return None
@@ -838,9 +860,9 @@ def register_callback_handlers(dispatcher):
                 or data.startswith("action:template:")
             )
             if not is_admin(user_id) and not (normal_access and normal_callback):
-                
-                
-                
+                # Acknowledge the callback silently only to stop Telegram's
+                # loading indicator. No alert, edit, message, or action is
+                # sent to non-admin users.
                 await query.answer()
                 return
 
@@ -880,10 +902,10 @@ def register_callback_handlers(dispatcher):
             else:
                 _callback_target = None
 
-            
-            
-            
-            
+            # Route the callback to its actual menu/action handler.  The
+            # previous temporary implementation edited every callback to
+            # "it's work" and then returned to the main menu, which made
+            # Clone List and all other buttons appear non-functional.
             handled = await _route_callback(
                 _CallbackAdapter(query),
                 data,
@@ -931,10 +953,10 @@ def register_callback_handlers(dispatcher):
             if pending is not None:
                 if _profile_apply_is_active():
                     return
-                
-                
-                
-                
+                # A reply bridged from Main is delivered to the Bot API as a
+                # message from the Main account, which may differ from the
+                # Main account replies may be bridged through Bot API. Accept
+                # them only while a pending input exists.
                 pending["_owner_id"] = owner_id
                 if (message.text or "").strip().lower() in (
                     "cancel",
@@ -1144,6 +1166,9 @@ def register_callback_handlers(dispatcher):
 
 async def _route_callback(event, data: str, automation) -> bool:
     """Route callback data to the correct menu or action handler."""
+    if data.startswith("update:"):
+        await _handle_update_action(event, data)
+        return True
     if _profile_apply_is_active():
         await event.answer()
         return True
@@ -1362,9 +1387,9 @@ async def _route_callback(event, data: str, automation) -> bool:
         try:
             await event.edit(text, buttons=keyboard)
         except Exception as exc:
-            
-            
-            
+            # Telegram rejects an edit when text and markup are unchanged.
+            # Refresh still succeeded, so do not log this expected condition
+            # as a callback failure.
             if "message is not modified" not in str(exc).lower():
                 raise
         await event.answer("🔄 Refreshed" if data == "status:refresh" else None)
@@ -1469,19 +1494,21 @@ async def _route_callback(event, data: str, automation) -> bool:
         return True
 
     if data.startswith("menu:template:open:"):
-        template_name = data.split(":", 3)[3]
+        template_name = data[len("menu:template:open:"):]
         await _edit_template_menu(event, automation, template_name, 1)
         await event.answer()
         return True
 
     if data.startswith("menu:template:edit:"):
-        _, _, _, template_name, clone_idx = data.split(":", 4)
+        template_name, clone_idx = data[len("menu:template:edit:"):].rsplit(":", 1)
         await _edit_template_menu(event, automation, template_name, int(clone_idx))
         await event.answer()
         return True
 
     if data.startswith("menu:template:edit_info:"):
-        _, _, _, template_name, clone_idx = data.split(":", 4)
+        template_name, clone_idx = data[
+            len("menu:template:edit_info:"):
+        ].rsplit(":", 1)
         from .menus.template import build_template_menu
         total = len(getattr(automation, "clone_clients", []))
         clone_idx = int(clone_idx)
@@ -1588,15 +1615,23 @@ async def _route_callback(event, data: str, automation) -> bool:
             await event.answer()
             return True
         if len(parts) >= 3 and parts[2] == "apply":
-            template_name = ":".join(parts[3:]) or ""
+            template_name = data[len("action:template:apply:"):]
+            delegated = can_access_normal_menu(event.sender_id) and not is_admin(
+                event.sender_id
+            )
+            if delegated:
+                await event.answer("Template apply is restricted to the main admin.", alert=True)
+                return True
             from .normal_mode_store import load_settings, save_clone_field
             settings = load_settings()
             template = settings["template"]["templates"].get(template_name)
             if template is None:
                 await event.answer("Template not found.", alert=True)
                 return True
+            clone_indices = []
             for clone_key, profile in template.get("clones", {}).items():
                 clone_idx = int(clone_key)
+                clone_indices.append(clone_idx)
                 for field in ("first_name", "last_name", "bio"):
                     if field in profile:
                         save_clone_field(clone_idx, field, profile[field])
@@ -1614,13 +1649,31 @@ async def _route_callback(event, data: str, automation) -> bool:
                     if source.is_file():
                         from .normal_mode_store import save_normal_photo
                         save_normal_photo(clone_idx, str(source))
-            await event.answer("Template applied to Normal Mode.")
+            from .profile_modes import apply_saved_mode
+            results = await apply_saved_mode(
+                automation,
+                mode="normal",
+                force=True,
+                clone_indices=clone_indices,
+            )
+            await event.answer(
+                f"Template applied. Success: {results['success']} | "
+                f"Skipped: {results['skipped']} | Failed: {results['failed']}"
+            )
             from .menus.template import build_template_menu
-            text, keyboard = build_template_menu(automation, template_name, 1)
+            text, keyboard = build_template_menu(
+                automation,
+                template_name,
+                1,
+                delegated=delegated,
+            )
             await event.edit(text, buttons=keyboard)
             return True
         if len(parts) >= 3 and parts[2] == "field":
-            _, _, _, template_name, clone_idx, action = data.split(":", 5)
+            template_name, clone_idx, action = data[len("action:template:field:"):].rsplit(":", 2)
+            delegated = can_access_normal_menu(event.sender_id) and not is_admin(
+                event.sender_id
+            )
             if action == "photo":
                 input_type = "template:photo"
             else:
@@ -1628,7 +1681,11 @@ async def _route_callback(event, data: str, automation) -> bool:
             set_pending_input(
                 event.sender_id,
                 input_type,
-                {"clone_idx": int(clone_idx), "template_name": template_name},
+                {
+                    "clone_idx": int(clone_idx),
+                    "template_name": template_name,
+                    "delegated": delegated,
+                },
             )
             await event.edit(
                 f"Send template {action.replace('_', ' ')} for Clone #{clone_idx}.",
@@ -1663,6 +1720,38 @@ async def _route_callback(event, data: str, automation) -> bool:
         return True
 
     return False
+
+
+async def _handle_update_action(event, data):
+    from updater import is_updater_running, request_update
+
+    if not is_updater_running():
+        await event.answer("Updater is not running", alert=True)
+        return
+    query = getattr(event, "_query", None)
+    message = getattr(query, "message", None) if query else None
+    if message is None:
+        await event.answer(
+            "This update action is only available in a private message",
+            alert=True,
+        )
+        return
+    action = data.split(":", 1)[1]
+    request_update(
+        "update" if action == "now" else action,
+        message.chat.id,
+        message.message_id,
+    )
+    if action == "check":
+        await event.edit("Checking for update...", buttons=None)
+    elif action == "now":
+        await event.edit(
+            "Update request received. The updater will stop the source and begin the update.",
+            buttons=None,
+        )
+    elif action == "remind":
+        await event.edit("Okay. I will remind you in 24 hours.", buttons=None)
+    await event.answer()
 
 
 async def _handle_clone_mode_action(event, data: str, automation):
@@ -1830,7 +1919,7 @@ async def _show_profile_apply_selector(event, automation, mode, clone_idx):
         },
     )
     pending = get_pending_input(owner_id)
-    
+    # The old menu is deleted, so text input must not try to refresh it.
     pending["target"] = {}
     total = len(getattr(automation, "clone_clients", []))
     keyboard = _profile_apply_keyboard(mode, clone_idx, total)
@@ -1939,8 +2028,11 @@ async def _handle_text_input(event, pending: dict):
             await complete_name_change(event, text, input_data, automation)
         elif input_type == "template:add":
             from .normal_mode_store import create_template
-            if not create_template(text[:64]):
-                await event.reply("Template name is empty or already exists.")
+            if not create_template(text[:32]):
+                await event.reply(
+                    "Template name is empty, longer than 32 characters, "
+                    "contains ':', or already exists."
+                )
                 return
             await _refresh_pending_target(
                 {"target": pending.get("target"), "type": "template:list",
@@ -2000,8 +2092,8 @@ async def _handle_text_input(event, pending: dict):
                 clear_clone_mode_overrides,
                 save_clone_mode_field,
             )
-            
-            
+            # A shared Clone Mode name must not be shadowed by old per-clone
+            # overrides created by the legacy bulk-name actions.
             clear_clone_mode_overrides("first_name")
             save_clone_mode_field("first_name", text[:64])
             await event.reply("✅ Clone Mode name saved. Press Apply⚙ to apply it.")
@@ -2112,9 +2204,9 @@ async def _handle_normal_action(event, data: str, automation):
             if getattr(automation, "normal_mode", False)
             else "normal"
         )
-        
-        
-        
+        # Mode selection is staged.  Turning the mode on must not mutate all
+        # clone profiles immediately; the user explicitly applies it with the
+        # Apply button shown in the menu.
         save_active_mode(target_mode)
         automation.normal_mode = target_mode == "normal"
         from .menus.normal_mode import build_normal_main_menu
@@ -2380,6 +2472,9 @@ async def _handle_photo_input(message: Message, pending: dict):
 
     temp_path = None
     try:
+        if pending.get("type") == "template:photo" and not message.photo:
+            await message.answer("Only an image can be used for a template photo.")
+            return
         media = message.photo[-1] if message.photo else message.video
         if media is None:
             return
@@ -2593,6 +2688,7 @@ async def _refresh_pending_target(pending, automation):
                 automation,
                 template_name,
                 int(data.get("clone_idx", 1)),
+                delegated=bool(data.get("delegated", False)),
             )
     elif input_type.startswith("profile:"):
         from .menus.profile_menu import build_profile_clone_menu
