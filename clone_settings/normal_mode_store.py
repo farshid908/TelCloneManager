@@ -38,7 +38,7 @@ def load_watermark_settings():
         data = {}
 
     if not isinstance(data, dict) or not data:
-        # Migrate settings saved by the previous implementation.
+        
         try:
             with SETTINGS_FILE.open("r", encoding="utf-8") as handle:
                 legacy = json.load(handle)
@@ -98,7 +98,7 @@ def load_settings():
         data["clone"].setdefault(key, value)
     data["clone"]["watermark_settings"] = load_watermark_settings()
 
-    # Migrate the previous Normal Mode format.
+    
     old_clones = data.pop("clones", {})
     if old_clones:
         data["normal"]["clones"].update(old_clones)
@@ -307,8 +307,8 @@ def reindex_clone_profiles(old_to_new, repair_id=None):
             )))
     for temporary, destination in staged:
         if destination.exists():
-            # Never delete an existing Normal Mode profile during repair.
-            # Keep both files when a destination slot already has data.
+            
+            
             original = temporary.with_name(
                 f"clone{re.search(r'-(\d+)-', temporary.name).group(1)}"
                 f"{temporary.suffix}"
@@ -323,12 +323,12 @@ def reindex_clone_profiles(old_to_new, repair_id=None):
             old = str(index)
             new = str(old_to_new.get(old, old))
             if new == "0":
-                # Repair may remove/reassign a session, but it must never
-                # remove the user's saved Normal Mode profile.
+                
+                
                 new = old
             if new in result and new != old:
-                # Preserve the profile already assigned to the destination
-                # slot instead of silently overwriting it.
+                
+                
                 result[old] = profile
             else:
                 result[new] = profile
@@ -355,7 +355,7 @@ def save_mode_photo(mode: str, source_path: str, clone_idx=None):
     directory.mkdir(parents=True, exist_ok=True)
     stem = "clone" if mode == "clone" else f"clone{clone_idx}"
 
-    # Short profile videos must bypass Pillow and keep their video format.
+    
     video_suffixes = {".mp4", ".mov", ".webm", ".m4v"}
     if source.suffix.lower() in video_suffixes:
         destination = directory / f"{stem}{source.suffix.lower()}"
@@ -382,8 +382,8 @@ def save_mode_photo(mode: str, source_path: str, clone_idx=None):
 
     destination = directory / f"{stem}.png"
 
-    # Telegram profile photos should be square. Crop from the center while
-    # preserving the largest possible area, then normalize every upload to PNG.
+    
+    
     try:
         from PIL import Image
 

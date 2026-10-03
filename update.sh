@@ -16,24 +16,13 @@ BACKUP_DIR="${BACKUP_ROOT}/${STAMP}"
 INSTALLED_FILES=()
 CHANGED_FILES=()
 
-cleanup() {
-    rm -rf -- "${WORK_DIR}"
-}
+cleanup() { rm -rf -- "${WORK_DIR}"; }
 trap cleanup EXIT
-
-die() {
-    printf 'ERROR: %s\n' "$*" >&2
-    exit 1
-}
-
-require_command() {
-    command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
-}
+die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+require_command() { command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"; }
 
 restore_backup() {
-    if [[ ! -d "${BACKUP_DIR}" ]]; then
-        return 0
-    fi
+    [[ -d "${BACKUP_DIR}" ]] || return 0
     for relative in "${INSTALLED_FILES[@]}"; do
         destination="${ROOT_DIR}/${relative}"
         saved="${BACKUP_DIR}/${relative}"
@@ -63,16 +52,8 @@ require_command "${PYTHON_BIN}"
 printf 'Downloading %s (%s)...\n' "${REPOSITORY}" "${BRANCH}"
 mkdir -p -- "${EXTRACT_DIR}"
 curl --fail --silent --show-error --location --retry 3 --connect-timeout 20 \
-    "${REPOSITORY}/archive/refs/heads/${BRANCH}.zip" \
-    --output "${ARCHIVE}"
+    "${REPOSITORY}/archive/refs/heads/${BRANCH}.zip" --output "${ARCHIVE}"
 unzip -q -- "${ARCHIVE}" -d "${EXTRACT_DIR}"
-
-mapfile -d '' SOURCE_FILES < <(
-    find "${EXTRACT_DIR}" -type f \( -name '*.py' -o -name 'requirements.txt' \) \
-        -not -path '*/.*' -print0
-)
-[[ "${#SOURCE_FILES[@]}" -gt 0 ]] || die "No source files were found in the archive"
-
 SOURCE_ROOT=""
 for candidate in "${EXTRACT_DIR}"/*; do
     [[ -d "${candidate}" ]] || continue
@@ -84,8 +65,7 @@ done
 printf 'Checking Python syntax...\n'
 while IFS= read -r -d '' source_file; do
     relative="${source_file#"${SOURCE_ROOT}/"}"
-    "${PYTHON_BIN}" -m py_compile "${source_file}" >/dev/null || \
-        die "Syntax check failed: ${relative}"
+    "${PYTHON_BIN}" -m py_compile "${source_file}" >/dev/null || die "Syntax check failed: ${relative}"
 done < <(find "${SOURCE_ROOT}" -type f -name '*.py' -not -path '*/.*' -print0)
 
 while IFS= read -r -d '' source_file; do
@@ -95,7 +75,6 @@ while IFS= read -r -d '' source_file; do
         CHANGED_FILES+=("${relative}")
     fi
 done < <(find "${SOURCE_ROOT}" -type f \( -name '*.py' -o -name 'requirements.txt' \) -not -path '*/.*' -print0)
-
 if [[ "${#CHANGED_FILES[@]}" -eq 0 ]]; then
     printf 'Already up to date. No source files changed.\n'
     exit 0
@@ -127,5 +106,4 @@ if ! restart_main; then
     restart_main || true
     die "Update rolled back. Backup: ${BACKUP_DIR}"
 fi
-
 printf 'Update completed successfully. Backup: %s\n' "${BACKUP_DIR}"

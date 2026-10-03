@@ -66,19 +66,11 @@ def parse_chatid_target(value):
             if len(parts) < 2 or not _USERNAME_RE.fullmatch(parts[1]):
                 return None
             message_id = int(parts[2]) if len(parts) >= 3 and parts[2].isdigit() else None
-            return {
-                "entity": parts[1],
-                "message_id": message_id,
-                "display": clean,
-            }
+            return {"entity": parts[1], "message_id": message_id, "display": clean}
         if not _USERNAME_RE.fullmatch(parts[0]):
             return None
         message_id = int(parts[1]) if len(parts) >= 2 and parts[1].isdigit() else None
-        return {
-            "entity": parts[0],
-            "message_id": message_id,
-            "display": clean,
-        }
+        return {"entity": parts[0], "message_id": message_id, "display": clean}
 
     if clean.startswith("@"):
         clean = clean[1:]
@@ -96,7 +88,6 @@ async def _resolve_target(client, target):
             "Use a username, public Telegram link, or a message link. "
             "Private invite links are not supported."
         )
-
     entity = await client.get_entity(parsed["entity"])
     message_id = parsed["message_id"]
     message = None
@@ -104,7 +95,6 @@ async def _resolve_target(client, target):
         message = await client.get_messages(entity, ids=message_id)
         if message is None:
             raise LookupError("The linked message was not found or is not accessible to Main.")
-
     chat_id = getattr(message, "chat_id", None) if message is not None else None
     if chat_id is None:
         chat_id = utils.get_peer_id(entity)
@@ -134,7 +124,6 @@ def register_chatid_handler(automation):
 
         parts = (event.raw_text or "").strip().split(maxsplit=2)
         target = parts[2] if len(parts) == 3 else None
-
         if target is None:
             chat_id = event.chat_id
             try:
@@ -145,14 +134,11 @@ def register_chatid_handler(automation):
         else:
             try:
                 entity, chat_id, message_id = await _resolve_target(
-                    automation.main_client,
-                    target,
+                    automation.main_client, target
                 )
                 logger.info(
                     "[CHATID] Resolved %s via Main: chat_id=%s message_id=%s",
-                    target,
-                    chat_id,
-                    message_id,
+                    target, chat_id, message_id
                 )
             except Exception as exc:
                 logger.warning("[CHATID] Target lookup failed for %r: %s", target, exc)
@@ -163,7 +149,6 @@ def register_chatid_handler(automation):
                 except Exception:
                     pass
                 return
-
         title = getattr(entity, "title", None) if entity else None
         username = getattr(entity, "username", None) if entity else None
         kind = _entity_kind(entity) if entity else "unknown"
@@ -184,8 +169,7 @@ def register_chatid_handler(automation):
         try:
             await automation.main_client.send_message("me", text, parse_mode=None)
             await event.edit(
-                f"✅ Chat ID sent to Saved Messages: {chat_id}",
-                parse_mode=None,
+                f"✅ Chat ID sent to Saved Messages: {chat_id}", parse_mode=None
             )
         except Exception as exc:
             logger.error("[CHATID] Failed to save/edit result: %s", exc)
