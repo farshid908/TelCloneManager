@@ -1,6 +1,6 @@
 """Clone Mode settings menu."""
 
-__TCM_FILE_HASH__ = "4827163905"
+__TCM_FILE_HASH__ = "7406281953"
 
 
 from ..utils.keyboards import make_inline_keyboard
@@ -14,9 +14,15 @@ def build_clone_mode_menu(automation):
     watermark = bool(clone.get("watermark", False))
     photo_name = clone.get("photo", "")
     has_photo = bool(photo_name and (CLONE_MODE_DIR / photo_name).is_file())
+    first_name = clone.get("first_name") or "--"
+    last_name = clone.get("last_name") or "--"
+    bio = clone.get("bio") or "--"
 
     text = (
         "Clone Mod Settings:\n\n"
+        f"Fname: {first_name}\n"
+        f"Lname: {last_name}\n"
+        f"Bio: {bio}\n\n"
         f"Profile Photo: {'✅ Set' if has_photo else 'NonePic'}"
     )
     buttons = [

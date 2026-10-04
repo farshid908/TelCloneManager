@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "7815302649"
+__TCM_FILE_HASH__ = "9047162835"
 
 import asyncio
 import base64
@@ -45,6 +45,7 @@ PID_FILE = ROOT / ".updater.pid"
 BACKUP_ROOT = ROOT / ".update_backups"
 ERROR_FILE = ROOT / "update_error.txt"
 UPDATE_OPERATION_LOCK = asyncio.Lock()
+DELETE_TASKS = set()
 
 try:
     sys.path.insert(0, str(ROOT))
@@ -372,14 +373,39 @@ async def _send_main_menu(bot, chat_id):
 
 async def _delete_after_delay(bot, chat_id, message_id, delay=60):
     await asyncio.sleep(delay)
-    try:
-        await bot.delete_message(chat_id, message_id)
-    except Exception as exc:
-        logger.info("Could not delete update status message: %s", exc)
+    for attempt in range(3):
+        try:
+            await bot.delete_message(chat_id, message_id)
+            return
+        except Exception as exc:
+            if attempt == 2:
+                logger.warning(
+                    "Could not delete update status message chat=%s message=%s: %s",
+                    chat_id,
+                    message_id,
+                    exc,
+                )
+                return
+            await asyncio.sleep(2)
+
+
+def _schedule_message_deletion(bot, chat_id, message_id, delay=60):
+    if not chat_id or not message_id:
+        return
+    task = asyncio.create_task(
+        _delete_after_delay(bot, chat_id, message_id, delay)
+    )
+    DELETE_TASKS.add(task)
+    task.add_done_callback(DELETE_TASKS.discard)
 
 
 def _message_id(result, fallback=None):
-    return result.get("result", {}).get("message_id", fallback)
+    if not isinstance(result, dict):
+        return fallback
+    payload = result.get("result")
+    if isinstance(payload, dict):
+        return payload.get("message_id", fallback)
+    return fallback
 
 
 async def _show_reminder_and_menu(bot, chat_id, message_id):
@@ -394,8 +420,7 @@ async def _show_reminder_and_menu(bot, chat_id, message_id):
         )
         reminder_id = result.get("result", {}).get("message_id")
     await _send_main_menu(bot, chat_id)
-    if reminder_id:
-        asyncio.create_task(_delete_after_delay(bot, chat_id, reminder_id, 60))
+    _schedule_message_deletion(bot, chat_id, reminder_id, 60)
 
 
 async def _edit_or_send(bot, chat_id, message_id, text, keyboard=None):
@@ -425,8 +450,7 @@ async def _show_already_up_to_date(bot, request):
     )
     status_message_id = _message_id(result, request.get("message_id"))
     await _send_main_menu(bot, chat_id)
-    if status_message_id:
-        asyncio.create_task(_delete_after_delay(bot, chat_id, status_message_id, 60))
+    _schedule_message_deletion(bot, chat_id, status_message_id, 60)
 
 
 def _status_admin_id():
@@ -644,10 +668,7 @@ async def _run_update_script(bot, request):
                 )
                 status_message_id = _message_id(result, status_message_id)
                 await _send_main_menu(bot, chat_id)
-                if status_message_id:
-                    asyncio.create_task(
-                        _delete_after_delay(bot, chat_id, status_message_id, 60)
-                    )
+                _schedule_message_deletion(bot, chat_id, status_message_id, 60)
             _save_installed_state(target_commit)
             return
         if return_code == 42:
@@ -687,10 +708,7 @@ async def _run_update_script(bot, request):
                 None,
             )
             status_message_id = _message_id(result, status_message_id)
-            if status_message_id:
-                asyncio.create_task(
-                    _delete_after_delay(bot, chat_id, status_message_id, 60)
-                )
+            _schedule_message_deletion(bot, chat_id, status_message_id, 60)
     except Exception as exc:
         logger.error("Update script execution failed: %s", exc, exc_info=True)
         if chat_id:
