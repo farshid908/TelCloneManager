@@ -1,6 +1,6 @@
 """Normal Mode template list and editor menus."""
 
-__TCM_FILE_HASH__ = "3682175942"
+__TCM_FILE_HASH__ = "7904162835"
 
 
 from ..normal_mode_store import STORE_DIR, load_settings

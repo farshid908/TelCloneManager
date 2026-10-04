@@ -1,6 +1,6 @@
 """Apply persisted Clone Mod and Normal Mode profiles."""
 
-__TCM_FILE_HASH__ = "2227537876"
+__TCM_FILE_HASH__ = "5162849073"
 
 
 import os
@@ -102,7 +102,11 @@ async def _apply_profile(
             ("bio", "about"),
         ):
             value = profile.get(key)
-            if value and str(value) != str(current_values[request_key]):
+            if key == "first_name":
+                should_update = bool(value)
+            else:
+                should_update = key in profile
+            if should_update and str(value or "") != str(current_values[request_key]):
                 profile_args[request_key] = value
     else:
         
@@ -112,8 +116,10 @@ async def _apply_profile(
             ("last_name", "last_name"),
             ("bio", "about"),
         ):
-            if profile.get(key):
+            if key == "first_name" and profile.get(key):
                 profile_args[request_key] = profile[key]
+            elif key in profile and key != "first_name":
+                profile_args[request_key] = profile.get(key) or ""
     if profile_args:
         logger.info(
             "[CLONE-MODE] Applying profile to %s: %s",
@@ -346,7 +352,7 @@ async def apply_saved_mode(
                         index, name, "skipped", completed, total
                     )
                 continue
-            if not any(
+            if mode == "normal" and not any(
                 profile.get(key)
                 for key in ("first_name", "last_name", "bio", "photo")
             ):
@@ -409,5 +415,6 @@ async def switch_mode(automation, mode, progress_callback=None):
     return await apply_saved_mode(
         automation,
         mode,
+        force=True,
         progress_callback=progress_callback,
     )

@@ -1,6 +1,6 @@
 """Callback and text-input handlers for the aiogram Clone Manager bot."""
 
-__TCM_FILE_HASH__ = "2774967214"
+__TCM_FILE_HASH__ = "9041736285"
 
 
 import asyncio
@@ -1693,10 +1693,29 @@ async def _route_callback(event, data: str, automation) -> bool:
             await event.edit(
                 f"Send template {action.replace('_', ' ')} for Clone #{clone_idx}.",
                 buttons=make_inline_keyboard([[
+                    *(([("Empty⭕️", f"action:template:empty:{template_name}:{clone_idx}:{action}")] if action in {"last_name", "bio"} else [])),
                     ("Cancel", f"menu:template:edit:{template_name}:{clone_idx}"),
                 ]]),
             )
             await event.answer()
+            return True
+
+        if data.startswith("action:template:empty:"):
+            template_name, clone_idx, field = data[len("action:template:empty:"):].rsplit(":", 2)
+            if field not in {"last_name", "bio"}:
+                await event.answer("⚠️ Invalid template field", alert=True)
+                return True
+            from .normal_mode_store import save_template_field
+            save_template_field(int(clone_idx), field, "", template_name)
+            from .menus.template import build_template_menu
+            text, keyboard = build_template_menu(
+                automation,
+                template_name,
+                int(clone_idx),
+                delegated=can_access_normal_menu(event.sender_id) and not is_admin(event.sender_id),
+            )
+            await event.edit(text, buttons=keyboard)
+            await event.answer("Saved empty")
             return True
         return True
 
@@ -1883,6 +1902,14 @@ async def _handle_clone_mode_action(event, data: str, automation):
         await event.answer()
         return
 
+    if action in {"empty_lname", "empty_bio"}:
+        from .normal_mode_store import save_clone_mode_field
+        field = "last_name" if action == "empty_lname" else "bio"
+        save_clone_mode_field(field, "")
+        await _edit_clone_mode_menu(event, automation)
+        await event.answer("Saved empty")
+        return
+
     if action in {"edit_bio", "edit_fname", "edit_lname"}:
         input_type = {
             "edit_bio": "clone_mode:bio",
@@ -1906,6 +1933,8 @@ async def _handle_clone_mode_action(event, data: str, automation):
         await event.edit(
             prompts[action],
             buttons=make_inline_keyboard([
+                *([[("Empty⭕️", "action:clone_mode:empty_lname")]] if action == "edit_lname" else []),
+                *([[("Empty⭕️", "action:clone_mode:empty_bio")]] if action == "edit_bio" else []),
                 [("Cancel", "action:clone_mode:cancel")]
             ]),
         )
@@ -2257,6 +2286,14 @@ async def _handle_normal_action(event, data: str, automation):
         await event.answer()
         return
 
+    if action in {"empty_last_name", "empty_bio"}:
+        from .normal_mode_store import save_clone_field
+        field = "last_name" if action == "empty_last_name" else "bio"
+        save_clone_field(clone_idx, field, "")
+        await _edit_normal_menu(event, automation, clone_idx)
+        await event.answer("Saved empty")
+        return
+
     if action in {"first_name", "last_name"}:
         from .utils.keyboards import make_inline_keyboard
         set_pending_input(
@@ -2274,6 +2311,7 @@ async def _handle_normal_action(event, data: str, automation):
             f"{'Reply to this message' if getattr(getattr(event, '_query', None), 'inline_message_id', None) else 'Send it as a new message'} "
             "(maximum 64 characters).\n",
             buttons=make_inline_keyboard([
+                *([[("Empty⭕️", f"action:normal:{clone_idx}:empty_last_name")]] if action == "last_name" else []),
                 [("Cancel", f"action:normal:{clone_idx}:cancel")]
             ]),
         )
@@ -2292,6 +2330,7 @@ async def _handle_normal_action(event, data: str, automation):
             f"{'Reply to this message' if getattr(getattr(event, '_query', None), 'inline_message_id', None) else 'Send it as a new message'} "
             "(maximum 70 characters).\n",
             buttons=make_inline_keyboard([
+                [("Empty⭕️", f"action:normal:{clone_idx}:empty_bio")],
                 [("Cancel", f"action:normal:{clone_idx}:cancel")]
             ]),
         )

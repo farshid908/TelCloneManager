@@ -1,6 +1,6 @@
 """Normal Mode menu for independent per-clone profiles."""
 
-__TCM_FILE_HASH__ = "7459613444"
+__TCM_FILE_HASH__ = "6382051749"
 
 
 from ..normal_mode_store import load_active_mode, load_settings

@@ -2,7 +2,7 @@
 Profile actions — change name, bio, username, photo for individual clones.
 """
 
-__TCM_FILE_HASH__ = "3695305021"
+__TCM_FILE_HASH__ = "7319052846"
 
 
 import os
@@ -101,6 +101,10 @@ async def handle_profile_action(event, data: str, automation, set_pending_input)
             f"Current: {_get_current_name(client, 'last')}\n\n"
             f"Send the new last name:\n"
             f"(send `.` to clear, or `cancel` to abort)"
+            , buttons=make_inline_keyboard([
+                [("Empty⭕️", f"action:profile:{clone_idx}:empty_last_name")],
+                [("Cancel", f"menu:profile:{clone_idx}")],
+            ])
         )
         await event.answer()
         return
@@ -127,8 +131,29 @@ async def handle_profile_action(event, data: str, automation, set_pending_input)
             f"📝 **Change Bio — Clone #{clone_idx}**\n\n"
             f"Send the new bio (max 70 chars):\n"
             f"(send `.` to clear, or `cancel` to abort)"
+            , buttons=make_inline_keyboard([
+                [("Empty⭕️", f"action:profile:{clone_idx}:empty_bio")],
+                [("Cancel", f"menu:profile:{clone_idx}")],
+            ])
         )
         await event.answer()
+        return
+
+    if action_type in {"empty_last_name", "empty_bio"}:
+        if action_type == "empty_last_name":
+            await complete_name_change(
+                event,
+                ".",
+                {"clone_idx": clone_idx, "field": "last_name"},
+                automation,
+            )
+        else:
+            await complete_bio_change(
+                event,
+                ".",
+                {"clone_idx": clone_idx},
+                automation,
+            )
         return
 
     if action_type == "username":
