@@ -25,17 +25,41 @@ progress() { printf '%s\n' "$*" | tee -a "${PROGRESS_FILE}"; }
 require_command() { command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"; }
 
 detect_python() {
-    if [[ -n "${PYTHON_BIN}" ]] && command -v "${PYTHON_BIN}" >/dev/null 2>&1; then
-        return
+    local candidate version pid exe base
+    if [[ -n "${PYTHON_BIN}" ]]; then
+        if [[ -x "${PYTHON_BIN}" ]]; then
+            version="$(${PYTHON_BIN} --version 2>&1 || true)"
+            [[ "${version}" == Python\ * ]] && return
+        elif candidate="$(command -v "${PYTHON_BIN}" 2>/dev/null || true)" && [[ -n "${candidate}" ]]; then
+            version="$(${candidate} --version 2>&1 || true)"
+            if [[ "${version}" == Python\ * ]]; then
+                PYTHON_BIN="${candidate}"
+                return
+            fi
+        fi
+        PYTHON_BIN=""
     fi
-    local pid exe
-    pid="$(pgrep -f '[p]ython.*main\.py' | head -n 1 || true)"
-    if [[ -n "${pid}" ]] && [[ -e "/proc/${pid}/exe" ]]; then
+    while read -r pid; do
+        [[ -n "${pid}" && -e "/proc/${pid}/exe" ]] || continue
         exe="$(readlink -f "/proc/${pid}/exe" 2>/dev/null || true)"
-        if [[ -x "${exe}" ]]; then PYTHON_BIN="${exe}"; return; fi
-    fi
-    PYTHON_BIN="$(command -v python3 || command -v python || true)"
-    [[ -n "${PYTHON_BIN}" ]] || die "Could not find the Python interpreter used by Main"
+        base="$(basename "${exe}")"
+        [[ "${base}" == python || "${base}" == python[0-9]* ]] || continue
+        version="$(${exe} --version 2>&1 || true)"
+        if [[ "${version}" == Python\ * ]]; then
+            PYTHON_BIN="${exe}"
+            return
+        fi
+    done < <(pgrep -f '[p]ython.*main\.py' || true)
+
+    for candidate in /opt/python3.14/bin/python3.14 /usr/local/bin/python3 /usr/bin/python3 /usr/bin/python; do
+        [[ -x "${candidate}" ]] || continue
+        version="$(${candidate} --version 2>&1 || true)"
+        if [[ "${version}" == Python\ * ]]; then
+            PYTHON_BIN="${candidate}"
+            return
+        fi
+    done
+    die "Could not find a usable Python interpreter for Main"
 }
 
 archive_key() {
@@ -76,8 +100,7 @@ restore_backup() {
 }
 
 restart_main() {
-    local python_for_main="${ROOT_DIR}/venv/bin/python"
-    [[ -x "${python_for_main}" ]] || python_for_main="${PYTHON_BIN}"
+    local python_for_main="${PYTHON_BIN}"
     local command="${START_COMMAND:-${python_for_main} -u main.py >> runtime.stdout.log 2>> runtime.stderr.log}"
     screen -S "${MAIN_SCREEN}" -X quit >/dev/null 2>&1 || true
     sleep 2
@@ -114,7 +137,11 @@ done
 progress "Checking Python syntax..."
 while IFS= read -r -d '' source_file; do
     relative="${source_file#"${SOURCE_ROOT}/"}"
-    "${PYTHON_BIN}" -m py_compile "${source_file}" >/dev/null || die "Syntax check failed: ${relative}"
+    if ! syntax_error="$(${PYTHON_BIN} -m py_compile "${source_file}" 2>&1)"; then
+        progress "ERROR: Syntax check failed: ${relative}"
+        progress "${syntax_error}"
+        die "Syntax check failed: ${relative}"
+    fi
 done < <(find "${SOURCE_ROOT}" -type f -name '*.py' -not -path '*/.*' -print0)
 
 while IFS= read -r -d '' source_file; do
