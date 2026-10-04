@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "6284071935"
+__TCM_FILE_HASH__ = "7815302649"
 
 import asyncio
 import base64
@@ -375,7 +375,11 @@ async def _delete_after_delay(bot, chat_id, message_id, delay=60):
     try:
         await bot.delete_message(chat_id, message_id)
     except Exception as exc:
-        logger.info("Could not delete reminder message: %s", exc)
+        logger.info("Could not delete update status message: %s", exc)
+
+
+def _message_id(result, fallback=None):
+    return result.get("result", {}).get("message_id", fallback)
 
 
 async def _show_reminder_and_menu(bot, chat_id, message_id):
@@ -419,9 +423,7 @@ async def _show_already_up_to_date(bot, request):
         "Already up to date.",
         None,
     )
-    status_message_id = result.get("result", {}).get(
-        "message_id", request.get("message_id")
-    )
+    status_message_id = _message_id(result, request.get("message_id"))
     await _send_main_menu(bot, chat_id)
     if status_message_id:
         asyncio.create_task(_delete_after_delay(bot, chat_id, status_message_id, 60))
@@ -588,10 +590,17 @@ def _dependency_keyboard():
 
 async def _run_update_script(bot, request):
     chat_id = request.get("chat_id") or _status_admin_id()
-    message_id = request.get("message_id")
+    status_message_id = request.get("message_id")
     target_commit = latest_commit()
     if chat_id:
-        await _edit_or_send(bot, chat_id, message_id, "Updating TelCloneManager...", None)
+        result = await _edit_or_send(
+            bot,
+            chat_id,
+            status_message_id,
+            "Updating TelCloneManager...",
+            None,
+        )
+        status_message_id = _message_id(result, status_message_id)
     progress_file = ROOT / ".update_progress.log"
     dependency_log = ROOT / "dependency_update_error.txt"
     try:
@@ -614,25 +623,31 @@ async def _run_update_script(bot, request):
             last_line = raw.decode("utf-8", "replace").strip()
             now = time.monotonic()
             if chat_id and last_line and now >= next_edit:
-                await _edit_or_send(
+                result = await _edit_or_send(
                     bot,
                     chat_id,
-                    message_id,
+                    status_message_id,
                     f"Updating TelCloneManager...\n{last_line}",
                     None,
                 )
+                status_message_id = _message_id(result, status_message_id)
                 next_edit = now + 2.0
         return_code = await process.wait()
         if return_code == 0:
             if chat_id:
-                await _edit_or_send(
+                result = await _edit_or_send(
                     bot,
                     chat_id,
-                    message_id,
+                    status_message_id,
                     "Update completed successfully. The bot is restarting...",
                     None,
                 )
+                status_message_id = _message_id(result, status_message_id)
                 await _send_main_menu(bot, chat_id)
+                if status_message_id:
+                    asyncio.create_task(
+                        _delete_after_delay(bot, chat_id, status_message_id, 60)
+                    )
             _save_installed_state(target_commit)
             return
         if return_code == 42:
@@ -646,14 +661,15 @@ async def _run_update_script(bot, request):
                     ),
                 )
             if chat_id:
-                await _edit_or_send(
+                result = await _edit_or_send(
                     bot,
                     chat_id,
-                    message_id,
+                    status_message_id,
                     "Dependency update is required before the source can start.\n"
                     "This may take 15-30 minutes depending on the system.",
                     _dependency_keyboard(),
                 )
+                status_message_id = _message_id(result, status_message_id)
             return
         error_text = (
             f"Update script failed with exit code {return_code}.\n"
@@ -663,7 +679,18 @@ async def _run_update_script(bot, request):
             error_text += "\n" + progress_file.read_text(encoding="utf-8", errors="replace")
         if chat_id:
             await _send_error(bot, chat_id, error_text)
-            await _edit_or_send(bot, chat_id, message_id, "⚠️ Update failed. See the log file.", None)
+            result = await _edit_or_send(
+                bot,
+                chat_id,
+                status_message_id,
+                "⚠️ Update failed. See the log file.",
+                None,
+            )
+            status_message_id = _message_id(result, status_message_id)
+            if status_message_id:
+                asyncio.create_task(
+                    _delete_after_delay(bot, chat_id, status_message_id, 60)
+                )
     except Exception as exc:
         logger.error("Update script execution failed: %s", exc, exc_info=True)
         if chat_id:
