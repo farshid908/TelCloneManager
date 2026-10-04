@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "9472615083"
+__TCM_FILE_HASH__ = "6284071935"
 
 import asyncio
 import base64
@@ -381,17 +381,17 @@ async def _delete_after_delay(bot, chat_id, message_id, delay=60):
 async def _show_reminder_and_menu(bot, chat_id, message_id):
     if not chat_id:
         return
-    result = await _edit_or_send(
-        bot,
-        chat_id,
-        message_id,
-        "Okay. I will remind you in 24 hours.",
-        None,
-    )
-    reminder_id = result.get("result", {}).get("message_id", message_id)
+    reminder_id = message_id
+    if not reminder_id:
+        result = await bot.send_message(
+            chat_id,
+            "Okay. I will remind you in 24 hours.",
+            reply_markup=None,
+        )
+        reminder_id = result.get("result", {}).get("message_id")
     await _send_main_menu(bot, chat_id)
     if reminder_id:
-        asyncio.create_task(_delete_after_delay(bot, chat_id, reminder_id))
+        asyncio.create_task(_delete_after_delay(bot, chat_id, reminder_id, 60))
 
 
 async def _edit_or_send(bot, chat_id, message_id, text, keyboard=None):
