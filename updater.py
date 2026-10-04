@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "4690281991"
+__TCM_FILE_HASH__ = "6724185037"
 
 import asyncio
 import base64
@@ -116,6 +116,10 @@ class TelegramBotAPI:
         if reply_markup is not None:
             payload["reply_markup"] = reply_markup
         return await asyncio.to_thread(self._request, "editMessageText", payload)
+
+    async def delete_message(self, chat_id, message_id):
+        payload = {"chat_id": chat_id, "message_id": message_id}
+        return await asyncio.to_thread(self._request, "deleteMessage", payload)
 
     async def send_document(self, chat_id, document, caption=None):
         payload = {"chat_id": chat_id}
@@ -245,6 +249,57 @@ def _keyboard():
             [{"text": "Remind me in 24 hrs", "callback_data": "update:remind"}],
         ]
     }
+
+
+def _main_menu_keyboard():
+    return {
+        "inline_keyboard": [
+            [
+                {"text": "Clone List 📋", "callback_data": "menu:clone_list"},
+                {"text": "Status 📊", "callback_data": "menu:status"},
+            ],
+            [
+                {"text": "Clone Mod 👥", "callback_data": "menu:clone_mode"},
+                {"text": "Normal Mod 👤", "callback_data": "menu:normal_main"},
+            ],
+            [{"text": "🔧Session Settings⚙", "callback_data": "menu:session_settings"}],
+            [{"text": "Check for update🔁", "callback_data": "update:check"}],
+        ]
+    }
+
+
+async def _send_main_menu(bot, chat_id):
+    if not chat_id:
+        return None
+    return await bot.send_message(
+        chat_id,
+        "🤖 Clone Manager — Main Menu\n\nSelect a section below:",
+        reply_markup=_main_menu_keyboard(),
+    )
+
+
+async def _delete_after_delay(bot, chat_id, message_id, delay=60):
+    await asyncio.sleep(delay)
+    try:
+        await bot.delete_message(chat_id, message_id)
+    except Exception as exc:
+        logger.info("Could not delete reminder message: %s", exc)
+
+
+async def _show_reminder_and_menu(bot, chat_id, message_id):
+    if not chat_id:
+        return
+    result = await _edit_or_send(
+        bot,
+        chat_id,
+        message_id,
+        "Okay. I will remind you in 24 hours.",
+        None,
+    )
+    reminder_id = result.get("result", {}).get("message_id", message_id)
+    await _send_main_menu(bot, chat_id)
+    if reminder_id:
+        asyncio.create_task(_delete_after_delay(bot, chat_id, reminder_id))
 
 
 async def _edit_or_send(bot, chat_id, message_id, text, keyboard=None):
@@ -462,6 +517,7 @@ async def _run_update_script(bot, request):
                     "Update completed successfully. The bot is restarting...",
                     None,
                 )
+                await _send_main_menu(bot, chat_id)
             return
         if return_code == 42:
             if chat_id and dependency_log.is_file():
@@ -512,7 +568,9 @@ async def _handle_request(bot, request):
         state["remind_until"] = time.time() + 86400
         _save_json(STATE_FILE, state)
         if request.get("chat_id"):
-            await _edit_or_send(bot, request["chat_id"], request.get("message_id"), "Okay. I will remind you in 24 hours.", None)
+            await _show_reminder_and_menu(
+                bot, request["chat_id"], request.get("message_id")
+            )
         return
     if action == "check":
         await check_for_update(bot, request)
@@ -521,12 +579,8 @@ async def _handle_request(bot, request):
         return
     if action == "deps_remind":
         if request.get("chat_id"):
-            await _edit_or_send(
-                bot,
-                request["chat_id"],
-                request.get("message_id"),
-                "Okay. I will remind you in 24 hours.",
-                None,
+            await _show_reminder_and_menu(
+                bot, request["chat_id"], request.get("message_id")
             )
         return
 
@@ -541,11 +595,25 @@ async def check_for_update(bot, request=None):
             state["current_commit"] = remote
             _save_json(STATE_FILE, state)
             if request.get("chat_id"):
-                await _edit_or_send(bot, request["chat_id"], request.get("message_id"), "Already up to date.", None)
+                await _edit_or_send(
+                    bot,
+                    request["chat_id"],
+                    request.get("message_id"),
+                    "Already up to date.",
+                    None,
+                )
+                await _send_main_menu(bot, request["chat_id"])
             return False
         if remote == current:
             if request.get("chat_id"):
-                await _edit_or_send(bot, request["chat_id"], request.get("message_id"), "Already up to date.", None)
+                await _edit_or_send(
+                    bot,
+                    request["chat_id"],
+                    request.get("message_id"),
+                    "Already up to date.",
+                    None,
+                )
+                await _send_main_menu(bot, request["chat_id"])
             return False
         remind_until = float(state.get("remind_until", 0) or 0)
         if request.get("action") == "check" or time.time() >= remind_until:
