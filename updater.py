@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "5831047269"
+__TCM_FILE_HASH__ = "9472615083"
 
 import asyncio
 import base64
@@ -408,6 +408,25 @@ async def _edit_or_send(bot, chat_id, message_id, text, keyboard=None):
     return await bot.send_message(chat_id, text, reply_markup=keyboard)
 
 
+async def _show_already_up_to_date(bot, request):
+    chat_id = request.get("chat_id")
+    if not chat_id:
+        return
+    result = await _edit_or_send(
+        bot,
+        chat_id,
+        request.get("message_id"),
+        "Already up to date.",
+        None,
+    )
+    status_message_id = result.get("result", {}).get(
+        "message_id", request.get("message_id")
+    )
+    await _send_main_menu(bot, chat_id)
+    if status_message_id:
+        asyncio.create_task(_delete_after_delay(bot, chat_id, status_message_id, 60))
+
+
 def _status_admin_id():
     response = _api_call("/status")
     return response.get("main_id")
@@ -708,38 +727,14 @@ async def check_for_update(bot, request=None):
             _save_installed_state(remote)
             current = remote
         if source_is_current and remote == current:
-            if request.get("chat_id"):
-                await _edit_or_send(
-                    bot,
-                    request["chat_id"],
-                    request.get("message_id"),
-                    "Already up to date.",
-                    None,
-                )
-                await _send_main_menu(bot, request["chat_id"])
+            await _show_already_up_to_date(bot, request)
             return False
         if source_is_current and not current:
             _save_installed_state(remote)
-            if request.get("chat_id"):
-                await _edit_or_send(
-                    bot,
-                    request["chat_id"],
-                    request.get("message_id"),
-                    "Already up to date.",
-                    None,
-                )
-                await _send_main_menu(bot, request["chat_id"])
+            await _show_already_up_to_date(bot, request)
             return False
         if remote == current and not marker_mismatches and manifest_matches:
-            if request.get("chat_id"):
-                await _edit_or_send(
-                    bot,
-                    request["chat_id"],
-                    request.get("message_id"),
-                    "Already up to date.",
-                    None,
-                )
-                await _send_main_menu(bot, request["chat_id"])
+            await _show_already_up_to_date(bot, request)
             return False
         remind_until = float(state.get("remind_until", 0) or 0)
         if request.get("action") == "check" or time.time() >= remind_until:
