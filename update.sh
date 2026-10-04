@@ -105,8 +105,16 @@ restart_main() {
     screen -S "${MAIN_SCREEN}" -X quit >/dev/null 2>&1 || true
     sleep 2
     screen -dmS "${MAIN_SCREEN}" bash -lc "cd $(printf '%q' "${ROOT_DIR}") && exec ${command}"
-    sleep 5
-    screen -list | grep -Eq "[.]${MAIN_SCREEN}[[:space:]]" || return 1
+    for _ in $(seq 1 15); do
+        if screen -list | grep -Eq "[.]${MAIN_SCREEN}[[:space:]]" \
+            && ps -eo comm=,args= | awk '$1 ~ /^python/ && $0 ~ /main\.py/ {found=1} END {exit !found}'; then
+            sleep 2
+            ps -eo comm=,args= | awk '$1 ~ /^python/ && $0 ~ /main\.py/ {found=1} END {exit !found}'
+            return $?
+        fi
+        sleep 2
+    done
+    return 1
 }
 
 require_command curl

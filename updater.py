@@ -2,10 +2,11 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "6724185037"
+__TCM_FILE_HASH__ = "5831047269"
 
 import asyncio
 import base64
+import hashlib
 import json
 import logging
 import os
@@ -43,6 +44,7 @@ STATE_FILE = ROOT / ".update_state.json"
 PID_FILE = ROOT / ".updater.pid"
 BACKUP_ROOT = ROOT / ".update_backups"
 ERROR_FILE = ROOT / "update_error.txt"
+UPDATE_OPERATION_LOCK = asyncio.Lock()
 
 try:
     sys.path.insert(0, str(ROOT))
@@ -208,6 +210,96 @@ def latest_commit():
             f"GitHub commit check failed: {api_error}; "
             f"git fallback failed: {result.stderr.strip()}"
         )
+
+
+def _remote_manifest():
+    payload = _github_request(f"contents/hashforupdate?ref={BRANCH}")
+    content = payload.get("content", "")
+    if payload.get("encoding") != "base64" or not content:
+        raise RuntimeError("GitHub hashforupdate is missing or invalid")
+    text = base64.b64decode(content.replace("\n", "")).decode(
+        "utf-8", "replace"
+    )
+    markers = {}
+    for line in text.splitlines():
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        value = value.strip()
+        if len(value) == 10 and value.isdigit():
+            markers[key.strip()] = value
+    if not markers:
+        raise RuntimeError("GitHub hashforupdate is empty or invalid")
+    normalized = "\n".join(
+        line.strip() for line in text.splitlines() if line.strip()
+    )
+    return markers, normalized
+
+
+def _marker_path(key):
+    if key == "requirements":
+        return ROOT / "requirements.txt"
+    if key.endswith("____init__"):
+        package = key[: -len("____init__")].replace("__", "/")
+        return ROOT / package / "__init__.py"
+    return ROOT / (key.replace("__", "/") + ".py")
+
+
+def _local_marker(path):
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    if path.name == "requirements.txt":
+        pattern = r"^#\s*TCM_REQUIREMENTS_HASH=(\d{10})\s*$"
+    else:
+        pattern = r"__TCM_FILE_HASH__\s*=\s*[\"'](\d{10})[\"']"
+    import re
+    match = re.search(pattern, text, re.MULTILINE)
+    return match.group(1) if match else None
+
+
+def _marker_mismatches(markers):
+    mismatches = []
+    for key, expected in markers.items():
+        path = _marker_path(key)
+        if not path.is_file() or _local_marker(path) != expected:
+            mismatches.append(key)
+    return mismatches
+
+
+def _local_manifest_normalized():
+    path = ROOT / "hashforupdate"
+    try:
+        return "\n".join(
+            line.strip()
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        )
+    except OSError:
+        return None
+
+
+def _manifest_digest():
+    path = ROOT / "hashforupdate"
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _save_installed_state(commit, manifest_digest=None):
+    state = _load_json(STATE_FILE, {})
+    state.update(
+        {
+            "current_commit": commit,
+            "installed_commit": commit,
+            "manifest_digest": manifest_digest or _manifest_digest(),
+            "updated_at": time.time(),
+            "status": "healthy",
+        }
+    )
+    _save_json(STATE_FILE, state)
 
 
 def _read_request():
@@ -478,15 +570,19 @@ def _dependency_keyboard():
 async def _run_update_script(bot, request):
     chat_id = request.get("chat_id") or _status_admin_id()
     message_id = request.get("message_id")
+    target_commit = latest_commit()
     if chat_id:
         await _edit_or_send(bot, chat_id, message_id, "Updating TelCloneManager...", None)
     progress_file = ROOT / ".update_progress.log"
     dependency_log = ROOT / "dependency_update_error.txt"
     try:
+        update_env = os.environ.copy()
+        update_env["TCM_TARGET_COMMIT"] = target_commit
         process = await asyncio.create_subprocess_exec(
             "bash",
             str(ROOT / "update.sh"),
             cwd=str(ROOT),
+            env=update_env,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
         )
@@ -518,6 +614,7 @@ async def _run_update_script(bot, request):
                     None,
                 )
                 await _send_main_menu(bot, chat_id)
+            _save_installed_state(target_commit)
             return
         if return_code == 42:
             if chat_id and dependency_log.is_file():
@@ -555,7 +652,19 @@ async def _run_update_script(bot, request):
 
 
 async def perform_update(bot, request):
-    await _run_update_script(bot, request)
+    if UPDATE_OPERATION_LOCK.locked():
+        chat_id = request.get("chat_id")
+        if chat_id:
+            await _edit_or_send(
+                bot,
+                chat_id,
+                request.get("message_id"),
+                "An update is already in progress.",
+                None,
+            )
+        return
+    async with UPDATE_OPERATION_LOCK:
+        await _run_update_script(bot, request)
 
 
 async def _handle_request(bot, request):
@@ -589,11 +698,16 @@ async def check_for_update(bot, request=None):
     request = request or {}
     try:
         remote = latest_commit()
+        remote_markers, remote_manifest = _remote_manifest()
+        marker_mismatches = _marker_mismatches(remote_markers)
+        manifest_matches = _local_manifest_normalized() == remote_manifest
         state = _load_json(STATE_FILE, {})
         current = state.get("current_commit")
-        if not current:
-            state["current_commit"] = remote
-            _save_json(STATE_FILE, state)
+        source_is_current = not marker_mismatches and manifest_matches
+        if source_is_current and (not current or current != remote):
+            _save_installed_state(remote)
+            current = remote
+        if source_is_current and remote == current:
             if request.get("chat_id"):
                 await _edit_or_send(
                     bot,
@@ -604,7 +718,19 @@ async def check_for_update(bot, request=None):
                 )
                 await _send_main_menu(bot, request["chat_id"])
             return False
-        if remote == current:
+        if source_is_current and not current:
+            _save_installed_state(remote)
+            if request.get("chat_id"):
+                await _edit_or_send(
+                    bot,
+                    request["chat_id"],
+                    request.get("message_id"),
+                    "Already up to date.",
+                    None,
+                )
+                await _send_main_menu(bot, request["chat_id"])
+            return False
+        if remote == current and not marker_mismatches and manifest_matches:
             if request.get("chat_id"):
                 await _edit_or_send(
                     bot,
