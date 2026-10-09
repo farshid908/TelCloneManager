@@ -2,7 +2,7 @@
 Main menu for Clone Manager bot.
 """
 
-__TCM_FILE_HASH__ = "9475323654"
+__TCM_FILE_HASH__ = "6829415073"
 
 
 import os
@@ -35,13 +35,14 @@ def build_main_menu(automation, user_id=None):
         for client in getattr(automation, "clone_clients", [])
         if client.is_connected()
     )
+    active_loops = len(getattr(getattr(automation, "loops", None), "active", {}))
     text = (
         "🤖 Clone Manager — Main Menu\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "📊 Status Overview:\n"
         f"  • Clones: {online_clones}/{total_clones} online\n"
-        "  • Mirror: OFF ❌\n"
-        "  • Active Loops: __\n\n"
+        f"  • Mirror: {'ON ✅' if automation.mirror_mode else 'OFF ❌'}\n"
+        f"  • Active Loops: {active_loops}\n\n"
         f"  • Active Mod: {load_active_mode().title()}\n\n"
         "Select a section below:"
     )
@@ -71,6 +72,7 @@ def build_main_menu(automation, user_id=None):
             ("Clone Mod 👥", "menu:clone_mode"),
             ("Normal Mod 👤", "menu:normal_main"),
         ],
+        [("Join🔺/🔻Left", "menu:all")],
         [("🔧Session Settings⚙", "menu:session_settings")],
     ]
 

@@ -1,5 +1,5 @@
 
-__TCM_FILE_HASH__ = "4043299713"
+__TCM_FILE_HASH__ = "6159038472"
 
 import asyncio
 import logging
@@ -11,6 +11,29 @@ from entity_resolver import ChatTarget, auto_extract_chat_target, resolve_entity
 from message_sender import safe_send_message
 
 logger = logging.getLogger("TG-Auto")
+
+
+async def _is_clone_manager_message(automation, event) -> bool:
+    """Keep messages sent to the aiogram bot out of Mirror mode."""
+    bot_id = getattr(automation, "_clone_manager_bot_id", None)
+    if bot_id is None:
+        try:
+            from clone_settings.bot_core import get_bot_username
+
+            bot_username = get_bot_username()
+            if not bot_username:
+                return False
+            entity = await automation.main_client.get_entity(bot_username)
+            bot_id = getattr(entity, "id", None)
+            if bot_id is not None:
+                automation._clone_manager_bot_id = bot_id
+        except Exception:
+            logger.debug(
+                "[MIRROR] Could not resolve Clone Manager bot entity",
+                exc_info=True,
+            )
+            return False
+    return event.chat_id == bot_id
 
 
 def _has_media(message) -> bool:
@@ -170,6 +193,9 @@ def register_mirror_handler(automation):
     @automation.main_client.on(events.NewMessage(outgoing=True))
     async def _mirror_replicate(event):
         if not automation.mirror_mode or not automation.is_admin(event):
+            return
+        if await _is_clone_manager_message(automation, event):
+            logger.debug("[MIRROR] Ignoring message sent to Clone Manager bot")
             return
 
         raw = (event.raw_text or "").strip().lower()

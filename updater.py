@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "9047162835"
+__TCM_FILE_HASH__ = "4729186035"
 
 import asyncio
 import base64
@@ -46,6 +46,7 @@ BACKUP_ROOT = ROOT / ".update_backups"
 ERROR_FILE = ROOT / "update_error.txt"
 UPDATE_OPERATION_LOCK = asyncio.Lock()
 DELETE_TASKS = set()
+LAST_MENU_SENT = {}
 
 try:
     sys.path.insert(0, str(ROOT))
@@ -364,11 +365,38 @@ def _main_menu_keyboard():
 async def _send_main_menu(bot, chat_id):
     if not chat_id:
         return None
-    return await bot.send_message(
+    now = time.monotonic()
+    if now - LAST_MENU_SENT.get(chat_id, 0) < 2:
+        logger.info("Skipping duplicate main menu for chat=%s", chat_id)
+        return None
+    status = _api_call("/status")
+    online_clones = status.get("online_clones", 0)
+    total_clones = status.get("total_clones", 0)
+    mirror_enabled = bool(status.get("mirror_mode", False))
+    active_loops = status.get("active_loops", 0)
+    try:
+        from clone_settings.normal_mode_store import load_active_mode
+
+        active_mode = load_active_mode().title()
+    except Exception:
+        active_mode = "Clone"
+    text = (
+        "🤖 Clone Manager — Main Menu\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "📊 Status Overview:\n"
+        f"  • Clones: {online_clones}/{total_clones} online\n"
+        f"  • Mirror: {'ON ✅' if mirror_enabled else 'OFF ❌'}\n"
+        f"  • Active Loops: {active_loops}\n\n"
+        f"  • Active Mod: {active_mode}\n\n"
+        "Select a section below:"
+    )
+    result = await bot.send_message(
         chat_id,
-        "🤖 Clone Manager — Main Menu\n\nSelect a section below:",
+        text,
         reply_markup=_main_menu_keyboard(),
     )
+    LAST_MENU_SENT[chat_id] = now
+    return result
 
 
 async def _delete_after_delay(bot, chat_id, message_id, delay=60):

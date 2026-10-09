@@ -1,6 +1,6 @@
 """Callback and text-input handlers for the aiogram Clone Manager bot."""
 
-__TCM_FILE_HASH__ = "9041736285"
+__TCM_FILE_HASH__ = "5173084629"
 
 
 import asyncio
@@ -67,7 +67,13 @@ def _profile_apply_keyboard(mode, clone_idx, total):
 def _parse_clone_selection(raw, total):
     """Parse `1-5 10 17` into sorted, validated clone indexes."""
     selected = set()
-    for token in (raw or "").replace(",", " ").split():
+    normalized = (
+        (raw or "")
+        .replace(",", " ")
+        .replace("'", " ")
+        .replace(".", " ")
+    )
+    for token in normalized.split():
         if "-" in token:
             parts = token.split("-", 1)
             if len(parts) != 2 or not all(part.isdigit() for part in parts):
@@ -1172,6 +1178,16 @@ async def _route_callback(event, data: str, automation) -> bool:
     if data.startswith("update:"):
         await _handle_update_action(event, data)
         return True
+    if data == "menu:all" or data.startswith("all:"):
+        from .actions.all_actions import handle_all_callback
+        await handle_all_callback(
+            event,
+            data,
+            automation,
+            set_pending_input,
+            clear_pending_input,
+        )
+        return True
     if _profile_apply_is_active():
         await event.answer()
         return True
@@ -2213,6 +2229,10 @@ async def _handle_text_input(event, pending: dict):
         elif input_type == "group:join":
             from .actions.group_actions import complete_join_group
             await complete_join_group(event, text, automation)
+        elif input_type in {"all:join_selection", "all:left_selection"}:
+            from .actions.all_actions import complete_membership_selection
+            await complete_membership_selection(event, pending, text, automation)
+            clear_pending_input(owner_id)
         elif input_type == "group:leave":
             from .actions.group_actions import complete_leave_group
             await complete_leave_group(event, text, automation)
