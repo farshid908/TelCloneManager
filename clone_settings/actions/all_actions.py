@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "8642075319"
+__TCM_FILE_HASH__ = "3159074286"
 
 import asyncio
 import html
@@ -189,12 +189,12 @@ def _prompt_text(action, total):
     verb = "Join" if action == "join" else "Left"
     return (
         f"{verb} selected groups/channels\n\n"
-        f"تعداد کلون های فعال: {total}\n"
-        "عدد کلون(ها) را با فرمت های زیر ارسال کنید:\n"
+        f"Active clones: {total}\n"
+        "Send clone number(s) in one of these formats:\n"
         "1\n"
         "1-5\n"
         "1-7 , 9 , 15\n"
-        "یا از دکمه های زیر استفاده کنید⤵️\n\n"
+        "Or use the buttons below⤵️\n\n"
         f"{verb} All clones💠\n"
         "-‐--------------------------\n"
         "Cancel🚫"
