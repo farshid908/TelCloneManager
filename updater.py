@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "4729186035"
+__TCM_FILE_HASH__ = "5830427196"
 
 import asyncio
 import base64
@@ -302,6 +302,23 @@ def _save_installed_state(commit, manifest_digest=None):
         }
     )
     _save_json(STATE_FILE, state)
+
+
+def save_restart_notice(chat_id, message_id):
+    state = _load_json(STATE_FILE, {})
+    state["restart_notice"] = {
+        "chat_id": int(chat_id),
+        "message_id": int(message_id),
+    }
+    _save_json(STATE_FILE, state)
+
+
+def consume_restart_notice():
+    state = _load_json(STATE_FILE, {})
+    notice = state.pop("restart_notice", None)
+    if notice is not None:
+        _save_json(STATE_FILE, state)
+    return notice
 
 
 def _read_request():
@@ -695,8 +712,8 @@ async def _run_update_script(bot, request):
                     None,
                 )
                 status_message_id = _message_id(result, status_message_id)
-                await _send_main_menu(bot, chat_id)
-                _schedule_message_deletion(bot, chat_id, status_message_id, 60)
+                if status_message_id:
+                    save_restart_notice(chat_id, status_message_id)
             _save_installed_state(target_commit)
             return
         if return_code == 42:
