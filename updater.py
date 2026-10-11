@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "5830427196"
+__TCM_FILE_HASH__ = "5194587197"
 
 import asyncio
 import base64
@@ -41,6 +41,7 @@ MAIN_START_COMMAND = os.environ.get(
 )
 REQUEST_FILE = ROOT / ".update_request.json"
 STATE_FILE = ROOT / ".update_state.json"
+UPDATE_MENU_FLAG_FILE = ROOT / "update.txt"
 PID_FILE = ROOT / ".updater.pid"
 BACKUP_ROOT = ROOT / ".update_backups"
 ERROR_FILE = ROOT / "update_error.txt"
@@ -319,6 +320,38 @@ def consume_restart_notice():
     if notice is not None:
         _save_json(STATE_FILE, state)
     return notice
+
+
+def write_update_menu_flag():
+    temporary = UPDATE_MENU_FLAG_FILE.with_name(
+        f".{UPDATE_MENU_FLAG_FILE.name}.{os.getpid()}.tmp"
+    )
+    temporary.write_text("update=true\n", encoding="utf-8")
+    temporary.replace(UPDATE_MENU_FLAG_FILE)
+
+
+def read_update_menu_flag():
+    try:
+        lines = UPDATE_MENU_FLAG_FILE.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return False
+    for line in lines:
+        key, separator, value = line.partition("=")
+        if separator and key.strip().casefold() == "update":
+            return value.strip().casefold() == "true"
+    return False
+
+
+def delete_update_menu_flag():
+    try:
+        UPDATE_MENU_FLAG_FILE.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def clear_pending_update_menu():
+    delete_update_menu_flag()
+    consume_restart_notice()
 
 
 def _read_request():
@@ -673,6 +706,10 @@ async def _run_update_script(bot, request):
     progress_file = ROOT / ".update_progress.log"
     dependency_log = ROOT / "dependency_update_error.txt"
     try:
+        if chat_id:
+            save_restart_notice(chat_id, status_message_id or 0)
+            write_update_menu_flag()
+        progress_file.write_text("", encoding="utf-8")
         update_env = os.environ.copy()
         update_env["TCM_TARGET_COMMIT"] = target_commit
         process = await asyncio.create_subprocess_exec(
@@ -703,20 +740,24 @@ async def _run_update_script(bot, request):
                 next_edit = now + 2.0
         return_code = await process.wait()
         if return_code == 0:
+            progress_text = (
+                progress_file.read_text(encoding="utf-8", errors="replace")
+                if progress_file.is_file() else ""
+            )
+            if "Update completed successfully. Backup:" not in progress_text:
+                clear_pending_update_menu()
             if chat_id:
-                result = await _edit_or_send(
+                await _edit_or_send(
                     bot,
                     chat_id,
                     status_message_id,
                     "Update completed successfully. The bot is restarting...",
                     None,
                 )
-                status_message_id = _message_id(result, status_message_id)
-                if status_message_id:
-                    save_restart_notice(chat_id, status_message_id)
             _save_installed_state(target_commit)
             return
         if return_code == 42:
+            clear_pending_update_menu()
             if chat_id and dependency_log.is_file():
                 await bot.send_document(
                     chat_id,
@@ -737,6 +778,7 @@ async def _run_update_script(bot, request):
                 )
                 status_message_id = _message_id(result, status_message_id)
             return
+        clear_pending_update_menu()
         error_text = (
             f"Update script failed with exit code {return_code}.\n"
             f"Last log line: {last_line or 'no output'}\n"
@@ -755,6 +797,7 @@ async def _run_update_script(bot, request):
             status_message_id = _message_id(result, status_message_id)
             _schedule_message_deletion(bot, chat_id, status_message_id, 60)
     except Exception as exc:
+        clear_pending_update_menu()
         logger.error("Update script execution failed: %s", exc, exc_info=True)
         if chat_id:
             await _send_error(bot, chat_id, f"Update script execution failed: {type(exc).__name__}: {exc}")
