@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "3159074286"
+__TCM_FILE_HASH__ = "9331362093"
 
 import asyncio
 import html
@@ -188,12 +188,13 @@ def _prompt_keyboard(action):
 def _prompt_text(action, total):
     verb = "Join" if action == "join" else "Left"
     return (
-        f"{verb} selected groups/channels\n\n"
         f"Active clones: {total}\n"
         "Send clone number(s) in one of these formats:\n"
         "1\n"
         "1-5\n"
         "1-7 , 9 , 15\n"
+        "These numbers select clone accounts, not the group number.\n"
+        f"To {verb.lower()} this group on every clone, use the button below.\n"
         "Or use the buttons below⤵️\n\n"
         f"{verb} All clones💠\n"
         "-‐--------------------------\n"
@@ -284,8 +285,12 @@ async def _leave_one(client, item):
     return "failed"
 
 
-async def _run_membership_action(message, pending, automation, action, indices):
-    items = _reports.get(message.from_user.id, [])
+async def _run_membership_action(
+    message, pending, automation, action, indices, owner_id=None,
+):
+    if owner_id is None:
+        owner_id = getattr(getattr(message, "from_user", None), "id", None)
+    items = _reports.get(owner_id, [])
     item_index = pending["data"]["item_index"]
     if item_index >= len(items):
         await message.answer("The selected group is no longer available.")
@@ -328,7 +333,7 @@ async def _run_membership_action(message, pending, automation, action, indices):
         None,
     )
     fresh_items = await scan_memberships(automation)
-    _reports[message.from_user.id] = fresh_items
+    _reports[owner_id] = fresh_items
     text, keyboard = render_report(fresh_items, 1, len(automation.clone_clients))
     await _answer_new_message(message, text, keyboard)
 
@@ -362,7 +367,7 @@ async def handle_all_callback(event, data, automation, set_pending_input, clear_
         await event.answer()
         await _run_membership_action(
             event._query.message, pending, automation, action,
-            list(range(1, total + 1)),
+            list(range(1, total + 1)), owner_id=user_id,
         )
         clear_pending_input(user_id)
         return
@@ -407,4 +412,11 @@ async def complete_membership_selection(message, pending, text, automation):
     except ValueError as exc:
         await message.answer(f"⚠️ {exc}")
         return
-    await _run_membership_action(message, pending, automation, action, indices)
+    await _run_membership_action(
+        message,
+        pending,
+        automation,
+        action,
+        indices,
+        owner_id=pending.get("_owner_id"),
+    )
