@@ -13,7 +13,7 @@ Supports all commands including:
     del, list, Dclick inside send, direct click, react with link
 """
 
-__TCM_FILE_HASH__ = "3344455517"
+__TCM_FILE_HASH__ = "3781329885"
 
 
 import re
@@ -385,6 +385,8 @@ def parse_send_command(raw):
     timeout_match = REPLY_TIMEOUT_PATTERN.search(outer_flags)
     if timeout_match:
         reply_timeout = int(timeout_match.group("seconds"))
+    elif rep_chat_id is not None:
+        reply_timeout = 10
 
     if not if_struct:
         dcf = DCLICK_PATTERN.search(outer_flags)

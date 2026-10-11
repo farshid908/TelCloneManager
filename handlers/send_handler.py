@@ -2,7 +2,7 @@
 Send command handler with state persistence, bridge fallback, and Dclick support.
 """
 
-__TCM_FILE_HASH__ = "4044207550"
+__TCM_FILE_HASH__ = "8132661501"
 
 
 import asyncio
@@ -290,6 +290,8 @@ def register_send_handler(automation):
                 dclick_delay=dclick_delay,
                 status_message=reply_msg,
                 initial_status_text=initial_status_text,
+                rep_chat_id=rep_chat_id,
+                reply_timeout=reply_timeout,
             )
 
 
@@ -315,6 +317,8 @@ async def _execute_send_with_state(
     loop_id=None,
     start_sender_index=0,
     sender_order=None,
+    rep_chat_id=None,
+    reply_timeout=None,
 ):
     clone_clients = (
         selected_clients if selected_clients is not None
@@ -360,6 +364,25 @@ async def _execute_send_with_state(
             logger.info(f"[SEND] Resuming — skipped {skipped} already-sent")
 
     if not senders:
+        if seq_id:
+            unregister_sequential(seq_id)
+        return
+
+    if rep_chat_id is not None:
+        await _execute_reply_chain_loop(
+            automation, chat_target, text, include_me, delay, None,
+            selected_clients=clone_clients,
+            selected_names=clone_names,
+            rep_chat_id=rep_chat_id,
+            button_text=button_text,
+            click_chain_delay=click_chain_delay,
+            reply_timeout=reply_timeout if reply_timeout is not None else 10,
+            reply_to=reply_to,
+            reply_text=reply_text,
+            if_structure=if_structure,
+            dclick_text=dclick_text,
+            dclick_delay=dclick_delay,
+        )
         if seq_id:
             unregister_sequential(seq_id)
         return
@@ -788,6 +811,11 @@ async def _execute_reply_chain_loop(
     button_text=None,
     click_chain_delay=None,
     reply_timeout=None,
+    reply_to=None,
+    reply_text=None,
+    if_structure=None,
+    dclick_text=None,
+    dclick_delay=0,
 ):
     """Send one reply-triggered chain iteration.
 
@@ -843,8 +871,13 @@ async def _execute_reply_chain_loop(
             )
             sent = await safe_send_message(
                 client, chat_target, rendered_text, session_name=name,
+                reply_to=reply_to,
                 button_text=button_text,
                 click_chain_delay=click_chain_delay,
+                reply_text=reply_text,
+                if_structure=if_structure,
+                dclick_text=dclick_text,
+                dclick_delay=dclick_delay,
                 main_client=automation.main_client,
                 bridge_group_id=BRIDGE_GROUP,
                 all_clone_clients=automation.clone_clients,
@@ -879,6 +912,7 @@ async def _execute_reply_chain_loop(
                         name, reply_timeout,
                     )
         finally:
+            reply_handler.closed = True
             client.remove_event_handler(reply_handler)
 
         if index < len(senders) - 1 and delay > 0:
@@ -892,6 +926,8 @@ def _make_designated_reply_handler(
     """Build a handler that accepts only the configured exact reply."""
     async def _on_message(event):
         try:
+            if getattr(_on_message, "closed", False):
+                return
             event_sender = event.sender_id
             event_reply_to = event.reply_to_msg_id
             if (
@@ -911,6 +947,7 @@ def _make_designated_reply_handler(
             logger.debug("[REP] Reply event inspection failed", exc_info=True)
 
     _on_message.reply_to_id = None
+    _on_message.closed = False
     return _on_message
 
 
