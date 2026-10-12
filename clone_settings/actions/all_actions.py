@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "9331362093"
+__TCM_FILE_HASH__ = "5695255372"
 
 import asyncio
 import html
@@ -186,19 +186,15 @@ def _prompt_keyboard(action):
 
 
 def _prompt_text(action, total):
-    verb = "Join" if action == "join" else "Left"
+    verb = "join" if action == "join" else "leave"
     return (
         f"Active clones: {total}\n"
         "Send clone number(s) in one of these formats:\n"
         "1\n"
         "1-5\n"
         "1-7 , 9 , 15\n"
-        "These numbers select clone accounts, not the group number.\n"
-        f"To {verb.lower()} this group on every clone, use the button below.\n"
-        "Or use the buttons below⤵️\n\n"
-        f"{verb} All clones💠\n"
-        "-‐--------------------------\n"
-        "Cancel🚫"
+        "These are clone account numbers, not group numbers.\n"
+        f"To make every clone {verb} this group, tap the button below."
     )
 
 
