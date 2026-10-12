@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "7362082743"
+__TCM_FILE_HASH__ = "5411801004"
 
 import asyncio
 import base64
@@ -309,6 +309,30 @@ def _compile_tree(directory, files):
             )
 
 
+def _restart_if_source_changed():
+    source_path = Path(__file__).resolve()
+    try:
+        source_lines = source_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        logger.exception("Could not read the updated updater source")
+        return
+    source_marker = next(
+        (
+            line.partition("=")[2].strip().strip("\"'")
+            for line in source_lines
+            if line.startswith("__TCM_FILE_HASH__ =")
+        ),
+        None,
+    )
+    if not source_marker or source_marker == __TCM_FILE_HASH__:
+        return
+    logger.info("Updater source changed; restarting in the current session")
+    os.execv(
+        sys.executable,
+        [sys.executable, "-u", str(source_path), *sys.argv[1:]],
+    )
+
+
 def _download_source():
     request = Request(
         f"{REPOSITORY}/archive/refs/heads/{BRANCH}.zip",
@@ -462,6 +486,7 @@ async def _run_update_script(bot, request):
                     "Update completed successfully. The bot is restarting...",
                     None,
                 )
+            _restart_if_source_changed()
             return
         if return_code == 42:
             if chat_id and dependency_log.is_file():
