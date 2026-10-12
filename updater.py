@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "5194587197"
+__TCM_FILE_HASH__ = "6672026002"
 
 import asyncio
 import base64
@@ -47,7 +47,6 @@ BACKUP_ROOT = ROOT / ".update_backups"
 ERROR_FILE = ROOT / "update_error.txt"
 UPDATE_OPERATION_LOCK = asyncio.Lock()
 DELETE_TASKS = set()
-LAST_MENU_SENT = {}
 
 try:
     sys.path.insert(0, str(ROOT))
@@ -395,60 +394,6 @@ def _keyboard():
     }
 
 
-def _main_menu_keyboard():
-    return {
-        "inline_keyboard": [
-            [
-                {"text": "Clone List 📋", "callback_data": "menu:clone_list"},
-                {"text": "Status 📊", "callback_data": "menu:status"},
-            ],
-            [
-                {"text": "Clone Mod 👥", "callback_data": "menu:clone_mode"},
-                {"text": "Normal Mod 👤", "callback_data": "menu:normal_main"},
-            ],
-            [{"text": "🔧Session Settings⚙", "callback_data": "menu:session_settings"}],
-            [{"text": "Check for update🔁", "callback_data": "update:check"}],
-        ]
-    }
-
-
-async def _send_main_menu(bot, chat_id):
-    if not chat_id:
-        return None
-    now = time.monotonic()
-    if now - LAST_MENU_SENT.get(chat_id, 0) < 2:
-        logger.info("Skipping duplicate main menu for chat=%s", chat_id)
-        return None
-    status = _api_call("/status")
-    online_clones = status.get("online_clones", 0)
-    total_clones = status.get("total_clones", 0)
-    mirror_enabled = bool(status.get("mirror_mode", False))
-    active_loops = status.get("active_loops", 0)
-    try:
-        from clone_settings.normal_mode_store import load_active_mode
-
-        active_mode = load_active_mode().title()
-    except Exception:
-        active_mode = "Clone"
-    text = (
-        "🤖 Clone Manager — Main Menu\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "📊 Status Overview:\n"
-        f"  • Clones: {online_clones}/{total_clones} online\n"
-        f"  • Mirror: {'ON ✅' if mirror_enabled else 'OFF ❌'}\n"
-        f"  • Active Loops: {active_loops}\n\n"
-        f"  • Active Mod: {active_mode}\n\n"
-        "Select a section below:"
-    )
-    result = await bot.send_message(
-        chat_id,
-        text,
-        reply_markup=_main_menu_keyboard(),
-    )
-    LAST_MENU_SENT[chat_id] = now
-    return result
-
-
 async def _delete_after_delay(bot, chat_id, message_id, delay=60):
     await asyncio.sleep(delay)
     for attempt in range(3):
@@ -486,7 +431,7 @@ def _message_id(result, fallback=None):
     return fallback
 
 
-async def _show_reminder_and_menu(bot, chat_id, message_id):
+async def _show_reminder(bot, chat_id, message_id):
     if not chat_id:
         return
     reminder_id = message_id
@@ -497,7 +442,6 @@ async def _show_reminder_and_menu(bot, chat_id, message_id):
             reply_markup=None,
         )
         reminder_id = result.get("result", {}).get("message_id")
-    await _send_main_menu(bot, chat_id)
     _schedule_message_deletion(bot, chat_id, reminder_id, 60)
 
 
@@ -527,7 +471,6 @@ async def _show_already_up_to_date(bot, request):
         None,
     )
     status_message_id = _message_id(result, request.get("message_id"))
-    await _send_main_menu(bot, chat_id)
     _schedule_message_deletion(bot, chat_id, status_message_id, 60)
 
 
@@ -829,7 +772,7 @@ async def _handle_request(bot, request):
         state["remind_until"] = time.time() + 86400
         _save_json(STATE_FILE, state)
         if request.get("chat_id"):
-            await _show_reminder_and_menu(
+            await _show_reminder(
                 bot, request["chat_id"], request.get("message_id")
             )
         return
@@ -840,7 +783,7 @@ async def _handle_request(bot, request):
         return
     if action == "deps_remind":
         if request.get("chat_id"):
-            await _show_reminder_and_menu(
+            await _show_reminder(
                 bot, request["chat_id"], request.get("message_id")
             )
         return
