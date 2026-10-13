@@ -1,12 +1,16 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "3627021965"
+__TCM_FILE_HASH__ = "5378931996"
 
 import asyncio
 import html
 import re
 
-from telethon.errors import FloodWaitError, UserAlreadyParticipantError
+from telethon.errors import (
+    FloodWaitError,
+    UserAlreadyParticipantError,
+    UserNotParticipantError,
+)
 from telethon.tl.functions.channels import (
     GetFullChannelRequest,
     JoinChannelRequest,
@@ -306,14 +310,25 @@ async def _join_one(client, item):
 
 
 async def _leave_one(client, item):
-    entity = await client.get_entity(_chat_id(item["entity"]))
-    if isinstance(entity, Channel):
-        await client(LeaveChannelRequest(entity))
-        return "success"
-    if isinstance(entity, Chat):
-        me = await client.get_me()
-        await client(DeleteChatUserRequest(chat_id=entity.id, user_id=me.id))
-        return "success"
+    for attempt in range(2):
+        try:
+            entity = await client.get_entity(_chat_id(item["entity"]))
+            if isinstance(entity, Channel):
+                await client(LeaveChannelRequest(entity))
+                return "success"
+            if isinstance(entity, Chat):
+                me = await client.get_me()
+                await client(DeleteChatUserRequest(chat_id=entity.id, user_id=me.id))
+                return "success"
+            return "failed"
+        except UserNotParticipantError:
+            return "already"
+        except FloodWaitError as exc:
+            if attempt:
+                return "failed"
+            await asyncio.sleep(exc.seconds + 1)
+        except Exception:
+            return "failed"
     return "failed"
 
 
@@ -361,12 +376,10 @@ async def _run_membership_action(
             results[result] += 1
         except Exception:
             results["failed"] += 1
-    await _edit_pending_message(
-        message,
-        pending,
-        f"{action.title()} completed.\n[{('█' * 10)}] 100%",
-        None,
-    )
+    completion_text = f"{action.title()} completed.\n[{('█' * 10)}] 100%"
+    if results["failed"]:
+        completion_text += f"\nFailed: {results['failed']} clone(s)."
+    await _edit_pending_message(message, pending, completion_text, None)
     checking_message = await _answer_new_message(
         message, "Checking clone memberships...", None
     )
