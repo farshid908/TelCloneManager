@@ -1,9 +1,10 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "5378931996"
+__TCM_FILE_HASH__ = "4782764613"
 
 import asyncio
 import html
+import logging
 import re
 
 from telethon.errors import (
@@ -27,6 +28,7 @@ from ..utils.keyboards import make_inline_keyboard
 
 PAGE_SIZE = 5
 _reports = {}
+logger = logging.getLogger("CloneManager")
 _JOIN_LINK_RE = re.compile(
     r"https?://t\.me/(?:joinchat/|\+)[A-Za-z0-9_-]+|"
     r"https?://t\.me/[A-Za-z][A-Za-z0-9_]{3,}",
@@ -47,6 +49,14 @@ def _chat_id(entity):
 def _clone_number(name, fallback):
     match = re.search(r"(\d+)$", str(name))
     return int(match.group(1)) if match else fallback
+
+
+def _clone_records(automation):
+    clients = list(getattr(automation, "clone_clients", []))
+    names = list(getattr(automation, "clone_names", []))
+    for position, client in enumerate(clients, start=1):
+        name = names[position - 1] if position <= len(names) else f"Clone{position}"
+        yield _clone_number(name, position), client, name
 
 
 def _format_clone_numbers(numbers):
@@ -99,12 +109,7 @@ async def _find_join_link(client, entity):
 
 async def scan_memberships(automation):
     memberships = {}
-    clients = list(getattr(automation, "clone_clients", []))
-    names = list(getattr(automation, "clone_names", []))
-    for fallback_index, (client, clone_name) in enumerate(
-        zip(clients, names), start=1
-    ):
-        clone_index = _clone_number(clone_name, fallback_index)
+    for clone_index, client, _ in _clone_records(automation):
         async for dialog in client.iter_dialogs():
             entity = dialog.entity
             if not isinstance(entity, (Chat, Channel)):
@@ -117,11 +122,13 @@ async def scan_memberships(automation):
                     "client": client,
                     "title": getattr(entity, "title", str(entity.id)),
                     "clones": [],
+                    "clone_entities": {},
                     "join_link": None,
                 },
             )
             if clone_index not in item["clones"]:
                 item["clones"].append(clone_index)
+                item["clone_entities"][clone_index] = entity
 
     items = sorted(memberships.values(), key=lambda item: str(item["title"]).lower())
     for item in items:
@@ -271,8 +278,9 @@ async def _edit_pending_message(message, pending, text, keyboard):
     await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
 
 
-def _parse_selection(raw, total):
+def _parse_selection(raw, available_numbers):
     normalized = (raw or "").replace(",", " ").replace("'", " ").replace(".", " ")
+    available_numbers = set(available_numbers)
     selected = set()
     for token in normalized.split():
         if "-" in token:
@@ -284,8 +292,12 @@ def _parse_selection(raw, total):
             selected.add(int(token))
         else:
             raise ValueError("Use numbers and ranges such as 1-5 10 17.")
-    if not selected or any(value < 1 or value > total for value in selected):
-        raise ValueError(f"Clone numbers must be between 1 and {total}.")
+    if not selected:
+        raise ValueError("Enter at least one active clone number.")
+    unavailable = sorted(selected - available_numbers)
+    if unavailable:
+        values = ", ".join(map(str, unavailable))
+        raise ValueError(f"Clone number(s) are not active: {values}.")
     return sorted(selected)
 
 
@@ -309,10 +321,11 @@ async def _join_one(client, item):
         return "failed"
 
 
-async def _leave_one(client, item):
+async def _leave_one(client, item, entity=None, clone_index=None):
     for attempt in range(2):
         try:
-            entity = await client.get_entity(_chat_id(item["entity"]))
+            if entity is None:
+                entity = await client.get_entity(_chat_id(item["entity"]))
             if isinstance(entity, Channel):
                 await client(LeaveChannelRequest(entity))
                 return "success"
@@ -325,11 +338,21 @@ async def _leave_one(client, item):
             return "already"
         except FloodWaitError as exc:
             if attempt:
-                return "failed"
+                logger.warning(
+                    "[MEMBERSHIP-LEAVE] Clone%s failed: FloodWaitError",
+                    clone_index,
+                )
+                return "failed:FloodWaitError"
             await asyncio.sleep(exc.seconds + 1)
-        except Exception:
-            return "failed"
-    return "failed"
+        except Exception as exc:
+            error_type = type(exc).__name__
+            logger.warning(
+                "[MEMBERSHIP-LEAVE] Clone%s failed: %s",
+                clone_index,
+                error_type,
+            )
+            return "failed:" + error_type
+    return "failed:UnknownError"
 
 
 async def _run_membership_action(
@@ -343,21 +366,22 @@ async def _run_membership_action(
         await message.answer("The selected group is no longer available.")
         return
     item = items[item_index]
+    clone_records = {
+        number: (client, name)
+        for number, client, name in _clone_records(automation)
+    }
     if action == "left":
         current_members = set(item["clones"])
         indices = [index for index in indices if index in current_members]
     total = len(indices)
     results = {"success": 0, "already": 0, "failed": 0, "skipped": 0}
+    failure_types = set()
     for completed, clone_index in enumerate(indices, start=1):
-        if clone_index > len(automation.clone_clients):
+        if clone_index not in clone_records:
             results["failed"] += 1
+            failure_types.add("CloneNotActive")
             continue
-        client = automation.clone_clients[clone_index - 1]
-        name = (
-            automation.clone_names[clone_index - 1]
-            if clone_index - 1 < len(automation.clone_names)
-            else f"Clone{clone_index}"
-        )
+        client, name = clone_records[clone_index]
         status = "Joining" if action == "join" else "Leaving"
         percent = int(completed * 100 / total)
         bar = "█" * (percent // 10) + "░" * (10 - percent // 10)
@@ -371,14 +395,27 @@ async def _run_membership_action(
             result = (
                 await _join_one(client, item)
                 if action == "join"
-                else await _leave_one(client, item)
+                else await _leave_one(
+                    client,
+                    item,
+                    item.get("clone_entities", {}).get(clone_index),
+                    clone_index,
+                )
             )
-            results[result] += 1
-        except Exception:
+            if result.startswith("failed:"):
+                results["failed"] += 1
+                failure_types.add(result.partition(":")[2])
+            else:
+                results[result] += 1
+        except Exception as exc:
             results["failed"] += 1
+            failure_types.add(type(exc).__name__)
     completion_text = f"{action.title()} completed.\n[{('█' * 10)}] 100%"
     if results["failed"]:
+        details = ", ".join(sorted(failure_types))
         completion_text += f"\nFailed: {results['failed']} clone(s)."
+        if details:
+            completion_text += " (" + details + ")"
     await _edit_pending_message(message, pending, completion_text, None)
     checking_message = await _answer_new_message(
         message, "Checking clone memberships...", None
@@ -418,7 +455,8 @@ async def handle_all_callback(event, data, automation, set_pending_input, clear_
         await event.answer()
         await _run_membership_action(
             event._query.message, pending, automation, action,
-            list(range(1, total + 1)), owner_id=user_id,
+            sorted(number for number, _, _ in _clone_records(automation)),
+            owner_id=user_id,
         )
         clear_pending_input(user_id)
         return
@@ -459,7 +497,10 @@ async def complete_membership_selection(message, pending, text, automation):
     action = pending["type"].split(":", 2)[1].replace("_selection", "")
     total = len(getattr(automation, "clone_clients", []))
     try:
-        indices = _parse_selection(text, total)
+        available_numbers = {
+            number for number, _, _ in _clone_records(automation)
+        }
+        indices = _parse_selection(text, available_numbers)
     except ValueError as exc:
         await message.answer(f"⚠️ {exc}")
         return
