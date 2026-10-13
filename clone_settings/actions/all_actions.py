@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "5695255372"
+__TCM_FILE_HASH__ = "7653964137"
 
 import asyncio
 import html
@@ -126,13 +126,21 @@ async def scan_memberships(automation):
     return items
 
 
-def _render_item(item, number):
+def _render_item(item, number, total_clones):
     title = html.escape(str(item["title"]))
     if item.get("join_link"):
         title = f'<a href="{html.escape(item["join_link"], quote=True)}">{title}</a>'
+    member_count = len(item["clones"])
+    if total_clones > 0 and member_count == total_clones:
+        membership = "All clone"
+    else:
+        membership = (
+            f"{html.escape(_format_clone_numbers(item['clones']))} "
+            f"({member_count} clones)"
+        )
     return (
         f"{number}. {title} | <code>{html.escape(_chat_id(item['entity']))}</code> | "
-        f"{html.escape(_format_clone_numbers(item['clones']))}"
+        f"{membership}"
     )
 
 
@@ -164,13 +172,21 @@ def _report_keyboard(items, page, total_clones):
 
 def render_report(items, page, total_clones):
     if not items:
-        text = "Groups/channels and clone memberships:\n\nNo groups or channels found."
+        text = (
+            f"Total clones: {total_clones}\n"
+            "Groups/channels and clone memberships:\n\n"
+            "No groups or channels found."
+        )
     else:
         start = (page - 1) * PAGE_SIZE
         visible = items[start:start + PAGE_SIZE]
-        lines = ["Groups/channels and clone memberships:", ""]
+        lines = [
+            f"Total clones: {total_clones}",
+            "Groups/channels and clone memberships:",
+            "",
+        ]
         body = "\n----------------------\n".join(
-            _render_item(item, start + index + 1)
+            _render_item(item, start + index + 1, total_clones)
             for index, item in enumerate(visible)
         )
         text = "\n".join(lines) + body
