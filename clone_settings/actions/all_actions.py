@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "7653964137"
+__TCM_FILE_HASH__ = "3627021965"
 
 import asyncio
 import html
@@ -225,12 +225,32 @@ async def _edit_callback(event, text, keyboard):
 
 
 async def _answer_new_message(event, text, keyboard):
+    answer = getattr(event, "answer", None)
+    if callable(answer):
+        return await answer(text, reply_markup=keyboard, parse_mode="HTML")
+
     message = getattr(event, "_message", None)
-    if message is not None:
-        return await message.answer(
+    answer = getattr(message, "answer", None)
+    if callable(answer):
+        return await answer(text, reply_markup=keyboard, parse_mode="HTML")
+
+    reply = getattr(event, "reply", None)
+    if callable(reply):
+        return await reply(text, buttons=keyboard, parse_mode="html")
+    raise TypeError("Could not send the clone membership report")
+
+
+async def _edit_new_message(message, text, keyboard):
+    edit_text = getattr(message, "edit_text", None)
+    if callable(edit_text):
+        return await edit_text(
             text, reply_markup=keyboard, parse_mode="HTML"
         )
-    return await event.reply(text)
+
+    edit = getattr(message, "edit", None)
+    if callable(edit):
+        return await edit(text, buttons=keyboard, parse_mode="html")
+    raise TypeError("Could not update the clone membership report")
 
 
 async def _edit_pending_message(message, pending, text, keyboard):
@@ -308,6 +328,9 @@ async def _run_membership_action(
         await message.answer("The selected group is no longer available.")
         return
     item = items[item_index]
+    if action == "left":
+        current_members = set(item["clones"])
+        indices = [index for index in indices if index in current_members]
     total = len(indices)
     results = {"success": 0, "already": 0, "failed": 0, "skipped": 0}
     for completed, clone_index in enumerate(indices, start=1):
@@ -344,10 +367,13 @@ async def _run_membership_action(
         f"{action.title()} completed.\n[{('█' * 10)}] 100%",
         None,
     )
+    checking_message = await _answer_new_message(
+        message, "Checking clone memberships...", None
+    )
     fresh_items = await scan_memberships(automation)
     _reports[owner_id] = fresh_items
     text, keyboard = render_report(fresh_items, 1, len(automation.clone_clients))
-    await _answer_new_message(message, text, keyboard)
+    await _edit_new_message(checking_message, text, keyboard)
 
 
 async def handle_all_callback(event, data, automation, set_pending_input, clear_pending_input):
