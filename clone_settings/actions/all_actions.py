@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "4782764613"
+__TCM_FILE_HASH__ = "6209384751"
 
 import asyncio
 import html
@@ -24,6 +24,7 @@ from telethon.tl.functions.messages import (
 )
 from telethon.tl.types import Channel, Chat
 
+from config import BRIDGE_GROUP
 from ..utils.keyboards import make_inline_keyboard
 
 PAGE_SIZE = 5
@@ -44,6 +45,15 @@ def _chat_id(entity):
     if isinstance(entity, Channel):
         return f"-100{entity.id}"
     return f"-{entity.id}"
+
+
+def _is_bridge_entity(entity):
+    if BRIDGE_GROUP is None:
+        return False
+    try:
+        return int(_chat_id(entity)) == int(BRIDGE_GROUP)
+    except (AttributeError, TypeError, ValueError):
+        return False
 
 
 def _clone_number(name, fallback):
@@ -113,6 +123,8 @@ async def scan_memberships(automation):
         async for dialog in client.iter_dialogs():
             entity = dialog.entity
             if not isinstance(entity, (Chat, Channel)):
+                continue
+            if _is_bridge_entity(entity):
                 continue
             key = _chat_key(entity)
             item = memberships.setdefault(
@@ -366,6 +378,9 @@ async def _run_membership_action(
         await message.answer("The selected group is no longer available.")
         return
     item = items[item_index]
+    if action == "left" and _is_bridge_entity(item["entity"]):
+        await message.answer("The configured bridge group is protected from leaving.")
+        return
     clone_records = {
         number: (client, name)
         for number, client, name in _clone_records(automation)
