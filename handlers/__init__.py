@@ -1,9 +1,10 @@
 """Handlers package."""
 
-__TCM_FILE_HASH__ = "8822926508"
+__TCM_FILE_HASH__ = "7138321632"
 
 
 from .go_handler import register_go_handler
+from .bot_interaction_handler import register_bot_interaction_handler
 from .back_handler import register_back_handler
 from .send_handler import register_send_handler
 from .stop_handler import register_stop_handler
@@ -34,6 +35,7 @@ def register_all_handlers(automation):
     
     
     register_command_footer(automation)
+    register_bot_interaction_handler(automation)
     register_go_handler(automation)
     register_back_handler(automation)
     register_send_handler(automation)
