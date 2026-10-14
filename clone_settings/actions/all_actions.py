@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "6392714508"
+__TCM_FILE_HASH__ = "1583497620"
 
 import asyncio
 import html
@@ -22,12 +22,13 @@ from telethon.tl.functions.messages import (
     GetFullChatRequest,
     ImportChatInviteRequest,
 )
-from telethon.tl.types import Channel, Chat
+from telethon.tl.types import Channel, Chat, PeerChannel, PeerChat
 
 from config import BRIDGE_GROUP
 from ..utils.keyboards import make_inline_keyboard
 
 PAGE_SIZE = 5
+_IGNORED_MEMBERSHIP_CHAT_IDS = {-5217418244}
 _reports = {}
 logger = logging.getLogger("CloneManager")
 _JOIN_LINK_RE = re.compile(
@@ -54,6 +55,31 @@ def _is_bridge_entity(entity):
         return int(_chat_id(entity)) == int(BRIDGE_GROUP)
     except (AttributeError, TypeError, ValueError):
         return False
+
+
+def _is_invalid_membership_entity(entity):
+    if not isinstance(entity, (Chat, Channel)):
+        return True
+    if getattr(entity, "deleted", False) or getattr(entity, "bot", False):
+        return True
+    try:
+        return int(_chat_id(entity)) in _IGNORED_MEMBERSHIP_CHAT_IDS
+    except (AttributeError, TypeError, ValueError):
+        return True
+
+
+def _is_group_or_channel_dialog(dialog):
+    entity = getattr(dialog, "entity", None)
+    if _is_invalid_membership_entity(entity):
+        return False
+    peer = getattr(dialog, "peer", None)
+    if peer is None:
+        return True
+    return (
+        isinstance(peer, PeerChat) and isinstance(entity, Chat)
+    ) or (
+        isinstance(peer, PeerChannel) and isinstance(entity, Channel)
+    )
 
 
 def _clone_number(name, fallback):
@@ -122,7 +148,7 @@ async def scan_memberships(automation):
     for clone_index, client, _ in _clone_records(automation):
         async for dialog in client.iter_dialogs():
             entity = dialog.entity
-            if not isinstance(entity, (Chat, Channel)):
+            if not _is_group_or_channel_dialog(dialog):
                 continue
             if _is_bridge_entity(entity):
                 continue
@@ -382,6 +408,9 @@ async def _run_membership_action(
         await message.answer("The selected group is no longer available.")
         return
     item = items[item_index]
+    if action == "left" and _is_invalid_membership_entity(item["entity"]):
+        await message.answer("This entry is not an active group or channel.")
+        return
     if action == "left" and _is_bridge_entity(item["entity"]):
         await message.answer("The configured bridge group is protected from leaving.")
         return
