@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "6209384751"
+__TCM_FILE_HASH__ = "6392714508"
 
 import asyncio
 import html
@@ -333,7 +333,9 @@ async def _join_one(client, item):
         return "failed"
 
 
-async def _leave_one(client, item, entity=None, clone_index=None):
+async def _leave_one(
+    client, item, entity=None, clone_index=None, floodwait_clones=None,
+):
     for attempt in range(2):
         try:
             if entity is None:
@@ -349,6 +351,8 @@ async def _leave_one(client, item, entity=None, clone_index=None):
         except UserNotParticipantError:
             return "already"
         except FloodWaitError as exc:
+            if floodwait_clones is not None and clone_index is not None:
+                floodwait_clones.add(clone_index)
             if attempt:
                 logger.warning(
                     "[MEMBERSHIP-LEAVE] Clone%s failed: FloodWaitError",
@@ -391,6 +395,7 @@ async def _run_membership_action(
     total = len(indices)
     results = {"success": 0, "already": 0, "failed": 0, "skipped": 0}
     failure_types = set()
+    floodwait_clones = set()
     for completed, clone_index in enumerate(indices, start=1):
         if clone_index not in clone_records:
             results["failed"] += 1
@@ -415,6 +420,7 @@ async def _run_membership_action(
                     item,
                     item.get("clone_entities", {}).get(clone_index),
                     clone_index,
+                    floodwait_clones,
                 )
             )
             if result.startswith("failed:"):
@@ -426,6 +432,18 @@ async def _run_membership_action(
             results["failed"] += 1
             failure_types.add(type(exc).__name__)
     completion_text = f"{action.title()} completed.\n[{('█' * 10)}] 100%"
+    if floodwait_clones:
+        names = [
+            clone_records[index][1]
+            for index in sorted(floodwait_clones)
+            if index in clone_records
+        ]
+        if names:
+            completion_text += (
+                "\nFloodWait occurred for clone(s): "
+                + ", ".join(names)
+                + "."
+            )
     if results["failed"]:
         details = ", ".join(sorted(failure_types))
         completion_text += f"\nFailed: {results['failed']} clone(s)."
