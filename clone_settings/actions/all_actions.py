@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "8407265193"
+__TCM_FILE_HASH__ = "5119676096"
 
 import asyncio
 import html
@@ -25,6 +25,7 @@ from telethon.tl.functions.messages import (
 from telethon.tl.types import Channel, Chat, PeerChannel, PeerChat
 
 from config import BRIDGE_GROUP
+from progress_bar import build_progress_bar
 from ..utils.keyboards import make_inline_keyboard
 
 PAGE_SIZE = 5
@@ -445,11 +446,10 @@ async def _run_membership_action(
         client, name = clone_records[clone_index]
         status = "Joining" if action == "join" else "Leaving"
         percent = int(completed * 100 / total)
-        bar = "█" * (percent // 10) + "░" * (10 - percent // 10)
         await _edit_pending_message(
             message,
             pending,
-            f"{status} {name}...\n[{bar}] {percent}%",
+            f"{status} {name}...\n{build_progress_bar(percent, 100)}",
             None,
         )
         try:
@@ -474,7 +474,9 @@ async def _run_membership_action(
         except Exception as exc:
             results["failed"] += 1
             failure_types.add(type(exc).__name__)
-    completion_text = f"{action.title()} completed.\n[{('█' * 10)}] 100%"
+    completion_text = (
+        f"{action.title()} completed.\n{build_progress_bar(100, 100)}"
+    )
     if action == "join" and already_indices:
         names = [
             clone_records[index][1]

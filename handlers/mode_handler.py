@@ -1,12 +1,13 @@
 """Telethon commands for switching between Clone Mode and Normal Mode."""
 
-__TCM_FILE_HASH__ = "3391620050"
+__TCM_FILE_HASH__ = "7035715834"
 
 
 import logging
 import re
 
 from telethon import events
+from progress_bar import build_progress_bar
 
 logger = logging.getLogger("TG-Auto")
 
@@ -16,12 +17,8 @@ MODE_COMMAND = re.compile(
 )
 
 
-def _progress_bar(done, total, width=12):
-    if total <= 0:
-        return "░" * width + " 0%"
-    ratio = max(0.0, min(1.0, done / total))
-    filled = int(round(ratio * width))
-    return f"{'█' * filled}{'░' * (width - filled)} {int(ratio * 100)}%"
+def _progress_bar(done, total):
+    return build_progress_bar(done, total)
 
 
 async def _notify_mode_switch(automation, target_mode):
@@ -106,4 +103,3 @@ def register_mode_handler(automation):
                     )
                 except Exception:
                     pass
-

@@ -5,7 +5,7 @@ Handler for privacy commands:
   prof hideall           — force base rule to Nobody
 """
 
-__TCM_FILE_HASH__ = "5226263148"
+__TCM_FILE_HASH__ = "9725253286"
 
 
 import asyncio
@@ -13,6 +13,7 @@ import logging
 
 from telethon import events
 from telethon.tl.types import User, Chat, Channel
+from progress_bar import build_progress_bar
 
 from command_parser import (
     parse_show_prof_command,
@@ -31,12 +32,8 @@ logger = logging.getLogger("TG-Auto")
 PRIVACY_AUTO_DELETE_DELAY = 3.0
 
 
-def _privacy_progress_bar(done, total, width=12):
-    if total <= 0:
-        return f"{'░' * width} 0%"
-    ratio = max(0.0, min(1.0, done / total))
-    filled = int(round(ratio * width))
-    return f"{'█' * filled}{'░' * (width - filled)} {int(ratio * 100)}%"
+def _privacy_progress_bar(done, total):
+    return build_progress_bar(done, total)
 
 
 async def _create_privacy_status(automation, action, total):

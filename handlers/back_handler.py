@@ -1,6 +1,6 @@
 """Administrator-only /back command handler."""
 
-__TCM_FILE_HASH__ = "5812410129"
+__TCM_FILE_HASH__ = "1352456013"
 
 
 import asyncio
@@ -14,6 +14,7 @@ from telethon.tl.functions.messages import DeleteChatUserRequest
 from telethon.tl.types import Channel, Chat, User
 
 from entity_resolver import resolve_entity
+from progress_bar import build_progress_bar
 
 logger = logging.getLogger("TG-Auto")
 
@@ -112,9 +113,7 @@ def _progress(title, names, done, current=None, final=False):
         )
     total = len(names)
     percent = int(len(done["names"]) * 100 / total) if total else 100
-    width = 20
-    filled = round(width * percent / 100)
-    bar = f"[{'█' * filled}{'░' * (width - filled)}] {percent}%"
+    bar = build_progress_bar(percent, 100)
     line = current if current else "Preparing..."
     return f"🔙Leaving {title} with {total} clone(s)…\n{line}\n{bar}"
 

@@ -2,11 +2,13 @@
 Text formatting utilities for Clone Manager bot.
 """
 
-__TCM_FILE_HASH__ = "7539206026"
+__TCM_FILE_HASH__ = "4968706622"
 
 
 import re
 from typing import List, Optional
+
+from progress_bar import build_progress_bar
 
 
 def escape_md(text: str) -> str:
@@ -112,20 +114,6 @@ def format_results_summary(results: dict) -> str:
         parts.append(f"⏳ {results['flood']}")
 
     return " | ".join(parts) if parts else "—"
-
-
-def build_progress_bar(current: int, total: int, width: int = 20) -> str:
-    """Build a text-based progress bar."""
-    if total <= 0:
-        return f"[{'?' * width}]"
-
-    filled = int(width * current / total)
-    empty = width - filled
-
-    bar = "█" * filled + "░" * empty
-    percent = int(100 * current / total)
-
-    return f"[{bar}] {percent}%"
 
 
 def format_clone_list_entry(

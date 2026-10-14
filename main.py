@@ -15,13 +15,18 @@ Features:
   - Graceful shutdown
 """
 
-__TCM_FILE_HASH__ = "8689716538"
+__TCM_FILE_HASH__ = "7384494689"
 
 import os
 import sys
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
+
+from progress_bar import configure_progress_bar
+
+PROGRESS_BAR = {"filled": "▰", "empty": "▱", "width": 10}
+configure_progress_bar(PROGRESS_BAR)
 
 
 

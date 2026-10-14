@@ -1,6 +1,6 @@
 """Callback and text-input handlers for the aiogram Clone Manager bot."""
 
-__TCM_FILE_HASH__ = "5173084629"
+__TCM_FILE_HASH__ = "3883170854"
 
 
 import asyncio
@@ -13,6 +13,7 @@ from typing import Optional
 from aiogram import Router
 from aiogram.types import CallbackQuery, Message
 from aiogram.types import FSInputFile, InputMediaPhoto
+from progress_bar import build_progress_bar
 
 from .bot_core import (
     can_access_normal_menu,
@@ -46,10 +47,8 @@ async def _safe_edit_event(event, text, keyboard):
         logger.debug("[CALLBACK] Menu already up to date")
 
 
-def _progress_bar(percent, width=20):
-    percent = max(0, min(100, int(percent)))
-    filled = round(width * percent / 100)
-    return f"[{'█' * filled}{'░' * (width - filled)}] {percent}%"
+def _progress_bar(percent):
+    return build_progress_bar(percent, 100)
 
 
 def _profile_apply_keyboard(mode, clone_idx, total):
@@ -295,11 +294,10 @@ async def _animate_session_code(bot, target, phone, action="Sending code"):
     """Show a small live loading indicator during session authentication."""
     step = 0
     while True:
-        dots = "░" * (step % 4)
         text = (
             f"📱 Phone: {phone}\n"
             f"{action}{'.' * (step % 4)}🔄\n"
-            f"[{dots}]"
+            f"{build_progress_bar(0, 1)}"
         )
         try:
             if target.get("inline_message_id"):
@@ -715,7 +713,7 @@ async def _handle_session_callback(query, data, automation):
     phone = pending.get("data", {}).get("phone", "")
     await _edit_query_message(
         query,
-        f"📱 Phone: {phone}\nLogging in...🔄\n[░░░░]",
+        f"📱 Phone: {phone}\nLogging in...🔄\n{build_progress_bar(0, 1)}",
     )
     login_task = asyncio.create_task(
         _animate_session_code(query.bot, target, phone, "Logging in")
@@ -1056,7 +1054,7 @@ def register_callback_handlers(dispatcher):
                     loading_text = (
                         f"📱 Phone: {phone}\n"
                         "Logging in...🔄\n"
-                        "[░░░░░░░░░░░░░░░░░░░░]"
+                        f"{build_progress_bar(0, 1)}"
                     )
                     try:
                         if target.get("chat_id") and target.get("message_id"):

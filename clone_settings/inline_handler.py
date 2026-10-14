@@ -1,6 +1,6 @@
 """Inline query handlers for the aiogram Clone Manager bot."""
 
-__TCM_FILE_HASH__ = "4767708375"
+__TCM_FILE_HASH__ = "1416558874"
 
 
 import logging
@@ -14,6 +14,8 @@ from aiogram.types import (
 
 from .bot_core import can_access_normal_menu, get_automation, is_admin
 from command_parser import extract_join_target
+from progress_bar import build_progress_bar
+
 logger = logging.getLogger("CloneManager")
 
 
@@ -82,7 +84,7 @@ def register_inline_handlers(dispatcher):
                         f"🚀 Joining {label} with "
                         f"{len(automation.clone_clients)} clone(s)…\n"
                         "Preparing...\n"
-                        "[░░░░░░░░░░░░░░░░░░░░] 0%"
+                        f"{build_progress_bar(0, 1)}"
                     )
                     menu_keyboard = None
                 else:

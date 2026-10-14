@@ -1,6 +1,6 @@
 """Persistent clone join job with Bot API progress updates."""
 
-__TCM_FILE_HASH__ = "6325318287"
+__TCM_FILE_HASH__ = "5560573110"
 
 
 import asyncio
@@ -33,6 +33,7 @@ from telethon.tl.types import InputReplyToMessage
 
 from command_parser import extract_join_target
 from entity_resolver import resolve_entity
+from progress_bar import build_progress_bar
 
 logger = logging.getLogger("TG-Auto")
 JOIN_STATE_FILE = (
@@ -110,10 +111,10 @@ def _clear_state():
         logger.warning("[GO] Could not clear join state", exc_info=True)
 
 
-def _bar(done, total, width=20):
-    percent = int(done * 100 / total) if total else 100
-    filled = round(width * percent / 100)
-    return f"[{'█' * filled}{'░' * (width - filled)}] {percent}%"
+def _bar(done, total):
+    if total <= 0:
+        return build_progress_bar(100, 100)
+    return build_progress_bar(done, total)
 
 
 async def _join_one(client, target, name):
