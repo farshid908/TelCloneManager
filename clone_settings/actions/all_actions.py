@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "5119676096"
+__TCM_FILE_HASH__ = "4864612860"
 
 import asyncio
 import html
@@ -169,6 +169,24 @@ async def scan_memberships(automation):
                 item["clones"].append(clone_index)
                 item["clone_entities"][clone_index] = entity
 
+    main_client = getattr(automation, "main_client", None)
+    if main_client is not None:
+        try:
+            async for dialog in main_client.iter_dialogs():
+                entity = dialog.entity
+                if not _is_group_or_channel_dialog(dialog):
+                    continue
+                if _is_bridge_entity(entity):
+                    continue
+                item = memberships.get(_chat_key(entity))
+                if item is not None:
+                    item["main_member"] = True
+        except Exception:
+            logger.warning(
+                "[MEMBERSHIP] Main account dialog scan failed",
+                exc_info=True,
+            )
+
     items = sorted(memberships.values(), key=lambda item: str(item["title"]).lower())
     for item in items:
         item["clones"].sort()
@@ -188,6 +206,8 @@ def _render_item(item, number, total_clones):
             f"{html.escape(_format_clone_numbers(item['clones']))} "
             f"({member_count} clones)"
         )
+    if item.get("main_member"):
+        membership += " +me"
     return (
         f"{number}. {title} | <code>{html.escape(_chat_id(item['entity']))}</code> | "
         f"{membership}"
