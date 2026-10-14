@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "1583497620"
+__TCM_FILE_HASH__ = "8407265193"
 
 import asyncio
 import html
@@ -251,15 +251,14 @@ def _prompt_keyboard(action):
 
 
 def _prompt_text(action, total):
-    verb = "join" if action == "join" else "leave"
     return (
         f"Active clones: {total}\n"
+        "Use the buttons below or:\n"
         "Send clone number(s) in one of these formats:\n"
         "1\n"
         "1-5\n"
         "1-7 , 9 , 15\n"
-        "These are clone account numbers, not group numbers.\n"
-        f"To make every clone {verb} this group, tap the button below."
+        "These are clone account numbers, not group numbers."
     )
 
 
@@ -339,7 +338,7 @@ def _parse_selection(raw, available_numbers):
     return sorted(selected)
 
 
-async def _join_one(client, item):
+async def _join_one(client, item, clone_index=None):
     link = item.get("join_link")
     if not link:
         return "skipped"
@@ -348,15 +347,23 @@ async def _join_one(client, item):
         if invite_hash:
             await client(ImportChatInviteRequest(invite_hash))
         else:
-            await client(JoinChannelRequest(item["entity"]))
+            username = link.rstrip("/").rsplit("/", 1)[-1].split("?", 1)[0]
+            entity = await client.get_entity(username)
+            await client(JoinChannelRequest(entity))
         return "success"
     except UserAlreadyParticipantError:
         return "already"
     except FloodWaitError as exc:
         await asyncio.sleep(exc.seconds + 1)
-        return await _join_one(client, item)
-    except Exception:
-        return "failed"
+        return await _join_one(client, item, clone_index)
+    except Exception as exc:
+        error_type = type(exc).__name__
+        logger.warning(
+            "[MEMBERSHIP-JOIN] Clone%s failed: %s",
+            clone_index,
+            error_type,
+        )
+        return "failed:" + error_type
 
 
 async def _leave_one(
@@ -418,11 +425,16 @@ async def _run_membership_action(
         number: (client, name)
         for number, client, name in _clone_records(automation)
     }
+    current_members = set(item["clones"])
+    already_indices = set()
     if action == "left":
-        current_members = set(item["clones"])
         indices = [index for index in indices if index in current_members]
+    elif action == "join":
+        already_indices = set(indices) & current_members
+        indices = [index for index in indices if index not in current_members]
     total = len(indices)
     results = {"success": 0, "already": 0, "failed": 0, "skipped": 0}
+    results["already"] = len(already_indices)
     failure_types = set()
     floodwait_clones = set()
     for completed, clone_index in enumerate(indices, start=1):
@@ -442,7 +454,7 @@ async def _run_membership_action(
         )
         try:
             result = (
-                await _join_one(client, item)
+                await _join_one(client, item, clone_index)
                 if action == "join"
                 else await _leave_one(
                     client,
@@ -457,10 +469,20 @@ async def _run_membership_action(
                 failure_types.add(result.partition(":")[2])
             else:
                 results[result] += 1
+                if action == "join" and result == "already":
+                    already_indices.add(clone_index)
         except Exception as exc:
             results["failed"] += 1
             failure_types.add(type(exc).__name__)
     completion_text = f"{action.title()} completed.\n[{('█' * 10)}] 100%"
+    if action == "join" and already_indices:
+        names = [
+            clone_records[index][1]
+            for index in sorted(already_indices)
+            if index in clone_records
+        ]
+        if names:
+            completion_text += "\nAlready members: " + ", ".join(names) + "."
     if floodwait_clones:
         names = [
             clone_records[index][1]
