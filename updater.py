@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "8578192415"
+__TCM_FILE_HASH__ = "4096827041"
 
 import asyncio
 import base64
@@ -487,15 +487,29 @@ async def _show_already_up_to_date(bot, request):
     chat_id = request.get("chat_id")
     if not chat_id:
         return
-    result = await _edit_or_send(
+    await _edit_or_send(
         bot,
         chat_id,
         request.get("message_id"),
         "Already up to date.",
         None,
     )
-    status_message_id = _message_id(result, request.get("message_id"))
-    _schedule_message_deletion(bot, chat_id, status_message_id, 60)
+    try:
+        menu = await asyncio.to_thread(
+            _api_call,
+            "/internal/main-menu",
+            "POST",
+            {"user_id": int(chat_id)},
+        )
+        if menu.get("error") or not menu.get("text"):
+            raise RuntimeError(menu.get("error", "Main menu is unavailable"))
+        await bot.send_message(
+            chat_id,
+            menu["text"],
+            reply_markup=menu.get("reply_markup"),
+        )
+    except Exception:
+        logger.warning("Could not send main menu after update check", exc_info=True)
 
 
 def _status_admin_id():

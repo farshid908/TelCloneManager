@@ -14,7 +14,7 @@ Access is protected by:
   2. Bearer token in Authorization header
 """
 
-__TCM_FILE_HASH__ = "2880648305"
+__TCM_FILE_HASH__ = "4749085577"
 
 
 import time
@@ -293,6 +293,29 @@ def api_status():
         "online_clones": sum(1 for c in clones if c["online"]),
         "active_loops": len(loops),
     })
+
+
+@api_app.route("/internal/main-menu", methods=["POST"])
+@require_token
+def api_internal_main_menu():
+    if _automation is None:
+        return jsonify({"error": "Automation not initialized"}), 503
+
+    payload = request.get_json(silent=True) or {}
+    try:
+        user_id = int(payload.get("user_id"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "user_id is required"}), 400
+
+    from clone_settings.menus.main_menu import build_main_menu
+
+    text, keyboard = build_main_menu(_automation, user_id=user_id)
+    reply_markup = (
+        keyboard.model_dump(mode="json", exclude_none=True)
+        if keyboard is not None
+        else None
+    )
+    return jsonify({"text": text, "reply_markup": reply_markup})
 
 
 
