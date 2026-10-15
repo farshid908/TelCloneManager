@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "6288028630"
+__TCM_FILE_HASH__ = "3830066264"
 
 import asyncio
 import html
@@ -62,6 +62,8 @@ def _is_invalid_membership_entity(entity):
     if not isinstance(entity, (Chat, Channel)):
         return True
     if getattr(entity, "deleted", False) or getattr(entity, "bot", False):
+        return True
+    if getattr(entity, "left", False) or getattr(entity, "kicked", False):
         return True
     if isinstance(entity, Chat) and (
         getattr(entity, "deactivated", False)
