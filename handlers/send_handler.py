@@ -2,7 +2,7 @@
 Send command handler with state persistence, bridge fallback, and Dclick support.
 """
 
-__TCM_FILE_HASH__ = "handlers__send_handler00002"
+__TCM_FILE_HASH__ = "handlers__send_handler00003"
 
 
 import asyncio
@@ -68,6 +68,12 @@ async def _edit_status(message, text):
 
 
         logger.debug(f"[SEND] Status edit skipped: {e}")
+
+
+def _append_status_result(initial_status_text, result_text):
+    if not initial_status_text:
+        return result_text
+    return f"{initial_status_text.rstrip()}\n{result_text}"
 
 
 def _select_clones(all_clients, all_names, clone_indices):
@@ -210,6 +216,8 @@ def register_send_handler(automation):
         initial_status_text = "\n".join(reply_lines)
         if send_count is not None and loop_interval is not None:
             initial_status_text += "\nTimer starts separately after each sender's message."
+        if send_count is not None:
+            initial_status_text += f"\n\n{event.raw_text.strip()}"
 
 
         edited_command = False
@@ -292,6 +300,7 @@ def register_send_handler(automation):
                     rep_chat_id=rep_chat_id,
                     reply_timeout=reply_timeout,
                     status_message=reply_msg,
+                    initial_status_text=initial_status_text,
                 )
             )
             await automation.loops.register(key, task)
@@ -361,6 +370,7 @@ async def _execute_bounded_sends(
     rep_chat_id=None,
     reply_timeout=None,
     status_message=None,
+    initial_status_text=None,
 ):
     senders = []
     if include_me:
@@ -445,7 +455,12 @@ async def _execute_bounded_sends(
 
     try:
         if not senders:
-            await _edit_status(status_message, "No selected senders are available.")
+            await _edit_status(
+                status_message,
+                _append_status_result(
+                    initial_status_text, "No selected senders are available."
+                ),
+            )
             return
 
         if loop_interval is not None:
@@ -474,16 +489,27 @@ async def _execute_bounded_sends(
             result = f"Finished {completed}/{total}; failed sender(s): {failed}."
         else:
             result = f"Completed {completed}/{total} sends."
-        await _edit_status(status_message, f"✅ {result}")
+        await _edit_status(
+            status_message,
+            _append_status_result(initial_status_text, f"✅ {result}"),
+        )
     except asyncio.CancelledError:
         await _edit_status(
-            status_message, f"🛑 Stopped after {completed}/{total} sends."
+            status_message,
+            _append_status_result(
+                initial_status_text,
+                f"🛑 Stopped after {completed}/{total} sends.",
+            ),
         )
         raise
     except Exception as e:
         logger.error("[SEND10] Job failed: %s", e, exc_info=True)
         await _edit_status(
-            status_message, f"⚠️ Send job stopped after {completed}/{total}."
+            status_message,
+            _append_status_result(
+                initial_status_text,
+                f"⚠️ Send job stopped after {completed}/{total}.",
+            ),
         )
     finally:
         automation.loops.remove(key)
