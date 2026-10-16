@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "updater00002"
+__TCM_FILE_HASH__ = "updater00003"
 
 import asyncio
 import base64
@@ -352,6 +352,10 @@ def consume_restart_notice():
     if notice is not None:
         _save_json(STATE_FILE, state)
     return notice
+
+
+def read_restart_notice():
+    return _load_json(STATE_FILE, {}).get("restart_notice")
 
 
 def write_update_menu_flag():

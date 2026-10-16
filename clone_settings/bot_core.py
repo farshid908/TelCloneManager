@@ -6,7 +6,7 @@ The clone accounts continue to be controlled by the existing Telethon
 user clients on that same loop.
 """
 
-__TCM_FILE_HASH__ = "clone_settings__bot_core00001"
+__TCM_FILE_HASH__ = "clone_settings__bot_core00002"
 
 
 import asyncio
@@ -91,42 +91,58 @@ async def _finish_update_restart(automation):
         from updater import (
             consume_restart_notice,
             delete_update_menu_flag,
+            read_restart_notice,
             read_update_menu_flag,
         )
         if not read_update_menu_flag():
             return
-        try:
-            notice = consume_restart_notice()
-            if not notice or _bot_client is None:
-                return
-            chat_id = notice.get("chat_id")
-            message_id = notice.get("message_id")
-            if chat_id and message_id:
-                try:
-                    await _bot_client.delete_message(chat_id, message_id)
-                except Exception:
-                    logger.debug(
-                        "[CLONE-MGR] Could not delete update restart notice",
-                        exc_info=True,
-                    )
-            from .menus.main_menu import build_main_menu
+        notice = read_restart_notice()
+        if not notice or _bot_client is None:
+            logger.warning(
+                "[CLONE-MGR] Post-update menu is pending without a usable restart notice"
+            )
+            return
+        chat_id = notice.get("chat_id")
+        message_id = notice.get("message_id")
+        if not chat_id:
+            logger.warning("[CLONE-MGR] Post-update menu is pending without a chat ID")
+            return
+        from .menus.main_menu import build_main_menu
 
-            text, keyboard = build_main_menu(automation, user_id=chat_id)
+        text, keyboard = build_main_menu(automation, user_id=chat_id)
+        sent = False
+        for attempt in range(3):
             try:
                 await _bot_client.send_message(
                     chat_id,
                     text,
                     reply_markup=keyboard,
                 )
+                sent = True
+                break
             except Exception:
-                logger.error(
-                    "[CLONE-MGR] Could not send post-update main menu",
+                logger.warning(
+                    "[CLONE-MGR] Could not send post-update main menu (attempt %s/3)",
+                    attempt + 1,
                     exc_info=True,
                 )
-        finally:
-            delete_update_menu_flag()
+                if attempt < 2:
+                    await asyncio.sleep(2 ** attempt)
+        if not sent:
+            return
+        consume_restart_notice()
+        delete_update_menu_flag()
+        if message_id:
+            try:
+                await _bot_client.delete_message(chat_id, message_id)
+            except Exception:
+                logger.debug(
+                    "[CLONE-MGR] Could not delete update restart notice",
+                    exc_info=True,
+                )
+        logger.info("[CLONE-MGR] Sent the post-update main menu")
     except Exception:
-        logger.debug("[CLONE-MGR] No pending update restart notice", exc_info=True)
+        logger.error("[CLONE-MGR] Could not finish the post-update menu", exc_info=True)
 
 
 def is_admin(user_id: int) -> bool:
