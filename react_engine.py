@@ -10,7 +10,7 @@ Supports:
   - Per-session, per-chat reaction cache
 """
 
-__TCM_FILE_HASH__ = "2024833917"
+__TCM_FILE_HASH__ = "react_engine00001"
 
 
 import asyncio

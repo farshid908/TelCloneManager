@@ -1,6 +1,6 @@
 """Status menu — active loops and mirror state."""
 
-__TCM_FILE_HASH__ = "7846834817"
+__TCM_FILE_HASH__ = "clone_settings__menus__status_menu00002"
 
 
 from ..utils.keyboards import make_inline_keyboard
@@ -25,7 +25,8 @@ async def build_status_text(automation) -> str:
 
     lines.append("\n**Active Loops:**")
     main_client = getattr(automation, "main_client", None)
-    for chat_id, text in active_loops:
+    for key in active_loops:
+        chat_id, text = key[:2]
         chat_name = str(chat_id)
         if main_client is not None:
             try:

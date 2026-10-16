@@ -1,6 +1,6 @@
 """Apply persisted Clone Mod and Normal Mode profiles."""
 
-__TCM_FILE_HASH__ = "5162849073"
+__TCM_FILE_HASH__ = "clone_settings__profile_modes00001"
 
 
 import os

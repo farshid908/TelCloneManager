@@ -2,7 +2,7 @@
 Clone detail menu — shows info and actions for a single clone.
 """
 
-__TCM_FILE_HASH__ = "1730935638"
+__TCM_FILE_HASH__ = "clone_settings__menus__clone_detail00001"
 
 
 import asyncio

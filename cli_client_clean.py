@@ -11,7 +11,7 @@ Usage:
     python cli_client.py logs          # quick logs
 """
 
-__TCM_FILE_HASH__ = "8743190641"
+__TCM_FILE_HASH__ = "cli_client_clean00001"
 
 import sys
 import json

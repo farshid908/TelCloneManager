@@ -2,7 +2,7 @@
 Reply sender — sends a message as a reply to another message.
 """
 
-__TCM_FILE_HASH__ = "9734242528"
+__TCM_FILE_HASH__ = "handlers__reply_handler00001"
 
 
 import asyncio

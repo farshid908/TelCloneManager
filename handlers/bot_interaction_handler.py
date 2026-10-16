@@ -1,6 +1,6 @@
 """Private bot chat interactions for user accounts."""
 
-__TCM_FILE_HASH__ = "3393700504"
+__TCM_FILE_HASH__ = "handlers__bot_interaction_handler00001"
 
 
 import asyncio

@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "4096827041"
+__TCM_FILE_HASH__ = "updater00002"
 
 import asyncio
 import base64
@@ -10,6 +10,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -227,9 +228,18 @@ def _remote_manifest():
         if "=" not in line:
             continue
         key, value = line.split("=", 1)
+        key = key.strip()
         value = value.strip()
-        if len(value) == 10 and value.isdigit():
-            markers[key.strip()] = value
+        if key == "requirements":
+            valid = re.fullmatch(r"\d{10}", value) is not None
+        else:
+            version = value[len(key):] if value.startswith(key) else ""
+            valid = (
+                re.fullmatch(r"[A-Za-z0-9_]+", key) is not None
+                and re.fullmatch(r"[0-9A-Z]{5}", version) is not None
+            )
+        if valid:
+            markers[key] = value
     if not markers:
         raise RuntimeError("GitHub hashforupdate is empty or invalid")
     normalized = "\n".join(
@@ -255,8 +265,7 @@ def _local_marker(path):
     if path.name == "requirements.txt":
         pattern = r"^#\s*TCM_REQUIREMENTS_HASH=(\d{10})\s*$"
     else:
-        pattern = r"__TCM_FILE_HASH__\s*=\s*[\"'](\d{10})[\"']"
-    import re
+        pattern = r"__TCM_FILE_HASH__\s*=\s*[\"']([A-Za-z0-9_]+[0-9A-Z]{5})[\"']"
     match = re.search(pattern, text, re.MULTILINE)
     return match.group(1) if match else None
 

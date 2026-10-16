@@ -1,6 +1,6 @@
 """Persistent commander session registry and ownership switching."""
 
-__TCM_FILE_HASH__ = "2809533667"
+__TCM_FILE_HASH__ = "commander_manager00001"
 
 
 import json

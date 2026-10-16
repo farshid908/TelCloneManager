@@ -2,7 +2,7 @@
 Handler for hunt-click commands: mainclick, cloneNclick, mainDclick, stopclick.
 """
 
-__TCM_FILE_HASH__ = "9892984657"
+__TCM_FILE_HASH__ = "handlers__click_handler00001"
 
 
 import asyncio

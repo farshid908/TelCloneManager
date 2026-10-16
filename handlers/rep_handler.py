@@ -1,6 +1,6 @@
 """Reply-trigger automation for Main, clones, and random account selection."""
 
-__TCM_FILE_HASH__ = "7530465937"
+__TCM_FILE_HASH__ = "handlers__rep_handler00001"
 
 
 import asyncio

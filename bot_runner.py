@@ -5,7 +5,7 @@ Standalone bot runner.
 Runs the Telegram bot as an independent process.
 """
 
-__TCM_FILE_HASH__ = "3008520809"
+__TCM_FILE_HASH__ = "bot_runner00002"
 
 import os
 import sys
@@ -126,7 +126,8 @@ def write_status(bot):
             ],
             "loops": [
                 {"chat_id": cid, "text": txt}
-                for (cid, txt) in bot.loops.active.keys()
+                for key in bot.loops.active.keys()
+                for cid, txt in [key[:2]]
             ],
             "admin_id": bot._admin_user_id,
         }

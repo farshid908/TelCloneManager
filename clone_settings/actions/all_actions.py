@@ -1,6 +1,6 @@
 """Clone membership listing and selective join/leave actions."""
 
-__TCM_FILE_HASH__ = "3830066264"
+__TCM_FILE_HASH__ = "clone_settings__actions__all_actions00001"
 
 import asyncio
 import html

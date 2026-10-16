@@ -2,7 +2,7 @@
 Loop actions — stop all loops, toggle mirror.
 """
 
-__TCM_FILE_HASH__ = "9306154894"
+__TCM_FILE_HASH__ = "clone_settings__actions__loop_actions00002"
 
 
 import logging
@@ -56,9 +56,9 @@ async def _stop_all_loops(event, automation):
     
     try:
         from state_persistence import unregister_loop
-        for chat_id, text in all_keys:
+        for key in all_keys:
             try:
-                unregister_loop(chat_id, text)
+                unregister_loop(key[0], key[1])
             except Exception:
                 pass
     except Exception as e:

@@ -14,7 +14,7 @@ Access is protected by:
   2. Bearer token in Authorization header
 """
 
-__TCM_FILE_HASH__ = "4749085577"
+__TCM_FILE_HASH__ = "admin_api00002"
 
 
 import time
@@ -278,7 +278,8 @@ def api_status():
 
     loops = [
         {"chat_id": cid, "text": txt}
-        for (cid, txt) in _automation.loops.active.keys()
+        for key in _automation.loops.active.keys()
+        for cid, txt in [key[:2]]
     ]
 
     return jsonify({

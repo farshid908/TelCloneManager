@@ -14,7 +14,7 @@ When deactivated:
   - Loops stopped by -s are resumed
 """
 
-__TCM_FILE_HASH__ = "2035365252"
+__TCM_FILE_HASH__ = "temp_main_manager00001"
 
 
 import logging

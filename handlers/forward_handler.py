@@ -1,6 +1,6 @@
 """Forward trigger messages to a bot and send a selected response line."""
 
-__TCM_FILE_HASH__ = "9949434980"
+__TCM_FILE_HASH__ = "handlers__forward_handler00001"
 
 
 import asyncio

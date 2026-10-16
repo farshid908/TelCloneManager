@@ -14,7 +14,7 @@ Search strategy:
     (no continuous scanning — efficient and instant)
 """
 
-__TCM_FILE_HASH__ = "2719207094"
+__TCM_FILE_HASH__ = "click_hunter00001"
 
 
 import asyncio

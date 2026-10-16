@@ -19,7 +19,7 @@ Architecture:
   - utils/               → Shared keyboards, formatters
 """
 
-__TCM_FILE_HASH__ = "6170152393"
+__TCM_FILE_HASH__ = "clone_settings____init__00001"
 
 
 import logging

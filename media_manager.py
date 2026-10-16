@@ -10,7 +10,7 @@ Media types:
 All files stored in ./media/ directory with a JSON registry.
 """
 
-__TCM_FILE_HASH__ = "8661494827"
+__TCM_FILE_HASH__ = "media_manager00001"
 
 
 import os

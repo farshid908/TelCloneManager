@@ -1,6 +1,6 @@
 """Handlers package."""
 
-__TCM_FILE_HASH__ = "7138321632"
+__TCM_FILE_HASH__ = "handlers____init__00001"
 
 
 from .go_handler import register_go_handler

@@ -2,7 +2,7 @@
 Analytics menu — stats about bot usage.
 """
 
-__TCM_FILE_HASH__ = "3828700500"
+__TCM_FILE_HASH__ = "clone_settings__menus__analytics_menu00001"
 
 
 import time

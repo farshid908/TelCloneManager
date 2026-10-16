@@ -7,7 +7,7 @@ Uses Telethon's GetPrivacyRequest/SetPrivacyRequest with a merge strategy:
   - Base rule is always DISALLOW ALL (only whitelist can see)
 """
 
-__TCM_FILE_HASH__ = "7107663915"
+__TCM_FILE_HASH__ = "privacy_engine00001"
 
 
 import logging

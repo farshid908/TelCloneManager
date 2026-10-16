@@ -1,6 +1,6 @@
 """Clone list menu — shows phone number and Telegram user ID."""
 
-__TCM_FILE_HASH__ = "7492501645"
+__TCM_FILE_HASH__ = "clone_settings__menus__clone_list00001"
 
 
 import os

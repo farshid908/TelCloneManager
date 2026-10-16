@@ -1,6 +1,6 @@
 """Persist bot power heartbeats and report downtime after a restart."""
 
-__TCM_FILE_HASH__ = "6075913233"
+__TCM_FILE_HASH__ = "power_monitor00001"
 
 
 import asyncio

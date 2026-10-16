@@ -1,6 +1,6 @@
 """Callback and text-input handlers for the aiogram Clone Manager bot."""
 
-__TCM_FILE_HASH__ = "3883170854"
+__TCM_FILE_HASH__ = "clone_settings__callback_handler00001"
 
 
 import asyncio

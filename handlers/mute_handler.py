@@ -1,6 +1,6 @@
 """Main-only notification suppression for selected groups/chats."""
 
-__TCM_FILE_HASH__ = "3920457642"
+__TCM_FILE_HASH__ = "handlers__mute_handler00001"
 
 
 import logging

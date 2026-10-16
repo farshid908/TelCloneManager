@@ -1,6 +1,6 @@
 """Persistent access control for the Normal Mode menu."""
 
-__TCM_FILE_HASH__ = "3802367586"
+__TCM_FILE_HASH__ = "clone_settings__normal_access00001"
 
 
 import json

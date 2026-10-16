@@ -13,7 +13,7 @@ the temp main user and processes known commands:
   - +me is always disabled for temp main
 """
 
-__TCM_FILE_HASH__ = "6017736646"
+__TCM_FILE_HASH__ = "handlers__temp_main_handler00002"
 
 
 import asyncio
@@ -759,9 +759,9 @@ async def _cmd_stop(automation, event, raw, raw_lower):
     if raw_lower == "stopall":
         all_keys = list(automation.loops.active.keys())
         count = await automation.loops.cancel_all()
-        for chat_id, text in all_keys:
+        for key in all_keys:
             try:
-                unregister_loop(chat_id, text)
+                unregister_loop(key[0], key[1])
             except Exception:
                 pass
         await event.reply(f"🛑 Stopped {count} loop(s)")

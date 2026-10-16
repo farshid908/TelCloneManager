@@ -15,7 +15,7 @@ Features:
   - Graceful shutdown
 """
 
-__TCM_FILE_HASH__ = "7384494689"
+__TCM_FILE_HASH__ = "main00001"
 
 import os
 import sys

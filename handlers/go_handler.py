@@ -1,6 +1,6 @@
 """Persistent clone join job with Bot API progress updates."""
 
-__TCM_FILE_HASH__ = "5560573110"
+__TCM_FILE_HASH__ = "handlers__go_handler00001"
 
 
 import asyncio

@@ -1,6 +1,6 @@
 """Shared progress-bar style and renderer."""
 
-__TCM_FILE_HASH__ = "6960415539"
+__TCM_FILE_HASH__ = "progress_bar00001"
 
 
 _BAR_STYLE = {"filled": "▰", "empty": "▱", "width": 10}

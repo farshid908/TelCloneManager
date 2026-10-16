@@ -1,6 +1,6 @@
 """Handler for reporting Telegram chat IDs to Saved Messages."""
 
-__TCM_FILE_HASH__ = "7987170490"
+__TCM_FILE_HASH__ = "handlers__chatid_handler00001"
 
 
 import logging

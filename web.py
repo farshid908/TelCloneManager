@@ -11,7 +11,7 @@ All admin operations (make/delete/convert sessions, etc.) are removed.
 Those are only accessible via internal admin API + CLI client.
 """
 
-__TCM_FILE_HASH__ = "7425531586"
+__TCM_FILE_HASH__ = "web00002"
 
 
 import time
@@ -503,7 +503,8 @@ def api_status():
     clones_count = len(_automation.clone_clients)
     loops = [
         {"chat_id": cid, "text": txt}
-        for (cid, txt) in _automation.loops.active.keys()
+        for key in _automation.loops.active.keys()
+        for cid, txt in [key[:2]]
     ]
 
     return jsonify({

@@ -8,7 +8,7 @@ Strategy:
      Have all clones fetch dialogs to update their cache
 """
 
-__TCM_FILE_HASH__ = "2387780733"
+__TCM_FILE_HASH__ = "bridge00001"
 
 
 import asyncio

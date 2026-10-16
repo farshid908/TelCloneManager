@@ -2,7 +2,7 @@
 Bulk actions — apply profile/privacy/name/bio changes to ALL clones at once.
 """
 
-__TCM_FILE_HASH__ = "4328718502"
+__TCM_FILE_HASH__ = "clone_settings__actions__bulk_actions00001"
 
 
 import asyncio

@@ -2,7 +2,7 @@
 
 """Safe GitHub updater and Telegram update notifier for TelCloneManager."""
 
-__TCM_FILE_HASH__ = "5411801004"
+__TCM_FILE_HASH__ = "updater_clean00001"
 
 import asyncio
 import base64

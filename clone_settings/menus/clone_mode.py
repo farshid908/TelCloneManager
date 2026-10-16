@@ -1,6 +1,6 @@
 """Clone Mode settings menu."""
 
-__TCM_FILE_HASH__ = "7406281953"
+__TCM_FILE_HASH__ = "clone_settings__menus__clone_mode00001"
 
 
 from ..utils.keyboards import make_inline_keyboard

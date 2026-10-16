@@ -14,7 +14,7 @@ Video watermark output is Telegram-profile-compatible:
   - Max 9.5 seconds
 """
 
-__TCM_FILE_HASH__ = "6804538329"
+__TCM_FILE_HASH__ = "watermark_engine00001"
 
 
 import os

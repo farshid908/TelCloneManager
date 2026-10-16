@@ -1,6 +1,6 @@
 """Telethon commands for switching between Clone Mode and Normal Mode."""
 
-__TCM_FILE_HASH__ = "7035715834"
+__TCM_FILE_HASH__ = "handlers__mode_handler00001"
 
 
 import logging

@@ -2,10 +2,11 @@
 Send command handler with state persistence, bridge fallback, and Dclick support.
 """
 
-__TCM_FILE_HASH__ = "4691358270"
+__TCM_FILE_HASH__ = "handlers__send_handler00002"
 
 
 import asyncio
+import hashlib
 import logging
 import time
 from typing import List, Optional, Tuple
@@ -258,8 +259,23 @@ def register_send_handler(automation):
 
         key = make_loop_key(event.chat_id, text)
         if send_count is not None:
+            scope_data = repr((
+                chat_target.send_target,
+                tuple(selected_names),
+                include_me,
+                reply_to,
+                button_text,
+                click_chain_delay,
+                reply_text,
+                repr(if_structure),
+                dclick_text,
+                dclick_delay,
+                rep_chat_id,
+                reply_timeout,
+            ))
+            scope = hashlib.sha256(scope_data.encode("utf-8")).hexdigest()
+            key = make_loop_key(event.chat_id, text, scope)
             await automation.loops.cancel_by_key(key)
-            unregister_loop(event.chat_id, text)
             task = asyncio.create_task(
                 _execute_bounded_sends(
                     automation, key, chat_target, text, send_count,

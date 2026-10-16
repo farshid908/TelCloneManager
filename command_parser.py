@@ -13,7 +13,7 @@ Supports all commands including:
     del, list, Dclick inside send, direct click, react with link
 """
 
-__TCM_FILE_HASH__ = "5827401936"
+__TCM_FILE_HASH__ = "command_parser00001"
 
 
 import re

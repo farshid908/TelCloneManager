@@ -2,7 +2,7 @@
 Handler for media commands: save as, send, del, list (vim/vom/mus/vid).
 """
 
-__TCM_FILE_HASH__ = "8239017926"
+__TCM_FILE_HASH__ = "handlers__media_handler00001"
 
 
 import asyncio

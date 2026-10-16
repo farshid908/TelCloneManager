@@ -4,7 +4,7 @@ Stops specific loops or all loops.
 Also removes from state persistence so they don't resume after restart.
 """
 
-__TCM_FILE_HASH__ = "1128399438"
+__TCM_FILE_HASH__ = "handlers__stop_handler00002"
 
 
 import logging
@@ -101,9 +101,9 @@ def register_stop_handler(automation):
         count = await automation.loops.cancel_all()
 
         
-        for chat_id, text in all_keys:
+        for key in all_keys:
             try:
-                unregister_loop(chat_id, text)
+                unregister_loop(key[0], key[1])
             except Exception as e:
                 logger.error(f"[STOPALL] State unregister failed: {e}")
 

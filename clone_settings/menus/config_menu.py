@@ -2,7 +2,7 @@
 Safety menu — FloodWait history, session health, dead sessions.
 """
 
-__TCM_FILE_HASH__ = "8980488806"
+__TCM_FILE_HASH__ = "clone_settings__menus__config_menu00001"
 
 
 import os

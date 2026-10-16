@@ -7,7 +7,7 @@ Supports:
   - Bulk preset (all keys at once)
 """
 
-__TCM_FILE_HASH__ = "7445237581"
+__TCM_FILE_HASH__ = "clone_settings__actions__privacy_actions00001"
 
 
 import asyncio

@@ -1,5 +1,5 @@
 
-__TCM_FILE_HASH__ = "3980413448"
+__TCM_FILE_HASH__ = "handlers__status_handler00002"
 
 import logging
 
@@ -66,8 +66,8 @@ def register_status_handler(automation):
                 f"\n🔄 **Active Loops** "
                 f"({len(automation.loops.active)}):"
             )
-            for (cid, txt) in automation.loops.active:
-                lines.append(f'  • chat `{cid}` → `"{txt}"`')
+            for key in automation.loops.active:
+                lines.append(f'  • chat `{key[0]}` → `"{key[1]}"`')
         else:
             lines.append("\n🔄 **Loops**: None")
 
@@ -102,8 +102,8 @@ def register_status_handler(automation):
             lines.append("\nNo active or saved loops.")
         if active:
             lines.append(f"\n🟢 Active ({len(active)}):")
-            for chat_id, text in active:
-                lines.append(f'• `{chat_id}` → "{text}"')
+            for key in active:
+                lines.append(f'• `{key[0]}` → "{key[1]}"')
         if saved:
             lines.append(f"\n💾 Saved ({len(saved)}):")
             for item in saved.values():

@@ -1,6 +1,6 @@
 """Show groups and channels shared by Main and all clones."""
 
-__TCM_FILE_HASH__ = "2157064745"
+__TCM_FILE_HASH__ = "handlers__all_handler00001"
 
 
 import asyncio

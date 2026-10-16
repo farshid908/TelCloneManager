@@ -1,6 +1,6 @@
 """Administrator-only /back command handler."""
 
-__TCM_FILE_HASH__ = "1352456013"
+__TCM_FILE_HASH__ = "handlers__back_handler00001"
 
 
 import asyncio

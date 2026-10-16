@@ -2,7 +2,7 @@
 Main menu for Clone Manager bot.
 """
 
-__TCM_FILE_HASH__ = "6829415073"
+__TCM_FILE_HASH__ = "clone_settings__menus__main_menu00001"
 
 
 import os

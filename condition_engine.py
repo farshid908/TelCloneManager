@@ -10,7 +10,7 @@ Supports patterns like:
     if any X=Y                        → check if ANY line has two equal numbers
 """
 
-__TCM_FILE_HASH__ = "3860344309"
+__TCM_FILE_HASH__ = "condition_engine00001"
 
 
 import re

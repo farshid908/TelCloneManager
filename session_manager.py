@@ -10,7 +10,7 @@ Handles:
   - Slot management (reuse deleted numbers)
 """
 
-__TCM_FILE_HASH__ = "7203970743"
+__TCM_FILE_HASH__ = "session_manager00001"
 
 
 import os

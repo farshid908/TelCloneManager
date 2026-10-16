@@ -2,7 +2,7 @@
 Text formatting utilities for Clone Manager bot.
 """
 
-__TCM_FILE_HASH__ = "4968706622"
+__TCM_FILE_HASH__ = "clone_settings__utils__formatters00001"
 
 
 import re

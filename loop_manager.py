@@ -1,18 +1,22 @@
 
-__TCM_FILE_HASH__ = "6068760171"
+__TCM_FILE_HASH__ = "loop_manager00002"
 
 import asyncio
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger("TG-Auto")
 
-LoopKey = Tuple[int, str]
+LoopKey = Union[Tuple[int, str], Tuple[int, str, str]]
 
 
-def make_loop_key(chat_id: int, text: str) -> LoopKey:
-    """Create registry key: (chat_id, text)."""
-    return (chat_id, text)
+def make_loop_key(
+    chat_id: int, text: str, scope: Optional[str] = None
+) -> LoopKey:
+    """Create a loop key, optionally scoped to an independent send job."""
+    if scope is None:
+        return (chat_id, text)
+    return (chat_id, text, scope)
 
 
 async def cancel_loop_task(task: asyncio.Task, key: LoopKey) -> None:
@@ -50,11 +54,20 @@ class LoopRegistry:
         )
 
     async def cancel_by_key(self, key: LoopKey) -> bool:
-        """Cancel a specific loop. Returns True if found."""
-        task = self.active.pop(key, None)
-        if task is None:
+        """Cancel a loop, or all scoped jobs matching a base key."""
+        if len(key) == 2:
+            matching_keys = [
+                active_key for active_key in self.active
+                if active_key[:2] == key
+            ]
+        else:
+            matching_keys = [key] if key in self.active else []
+        if not matching_keys:
             return False
-        await cancel_loop_task(task, key)
+        for matching_key in matching_keys:
+            task = self.active.pop(matching_key, None)
+            if task is not None:
+                await cancel_loop_task(task, matching_key)
         return True
 
     async def cancel_all(self) -> int:

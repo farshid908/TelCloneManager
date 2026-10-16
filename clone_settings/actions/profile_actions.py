@@ -2,7 +2,7 @@
 Profile actions — change name, bio, username, photo for individual clones.
 """
 
-__TCM_FILE_HASH__ = "7319052846"
+__TCM_FILE_HASH__ = "clone_settings__actions__profile_actions00001"
 
 
 import os

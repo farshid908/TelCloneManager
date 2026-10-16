@@ -7,7 +7,7 @@ Downloads the replied photo/video, watermarks it with the clone's name
 Main is NEVER modified — only clones.
 """
 
-__TCM_FILE_HASH__ = "2397038324"
+__TCM_FILE_HASH__ = "handlers__setprof_handler00001"
 
 
 import os

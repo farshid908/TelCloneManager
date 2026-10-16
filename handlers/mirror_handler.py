@@ -1,5 +1,5 @@
 
-__TCM_FILE_HASH__ = "6159038472"
+__TCM_FILE_HASH__ = "handlers__mirror_handler00001"
 
 import asyncio
 import logging

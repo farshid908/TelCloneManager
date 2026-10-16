@@ -1,5 +1,5 @@
 
-__TCM_FILE_HASH__ = "7533847826"
+__TCM_FILE_HASH__ = "click_engine00001"
 
 import asyncio
 import logging

@@ -1,6 +1,6 @@
 """Persistent button disappearance click commands."""
 
-__TCM_FILE_HASH__ = "8374655348"
+__TCM_FILE_HASH__ = "handlers__dclick_handler00001"
 
 
 import asyncio

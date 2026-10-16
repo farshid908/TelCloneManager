@@ -9,7 +9,7 @@ Handler for react commands:
 
 """
 
-__TCM_FILE_HASH__ = "7167816818"
+__TCM_FILE_HASH__ = "handlers__react_handler00001"
 
 
 import asyncio

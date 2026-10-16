@@ -1,5 +1,5 @@
 
-__TCM_FILE_HASH__ = "7936212544"
+__TCM_FILE_HASH__ = "logger_setup00001"
 
 import re
 import sys

@@ -8,7 +8,7 @@ Safe message sender with support for:
   - Bridge fallback for private users
 """
 
-__TCM_FILE_HASH__ = "9072164385"
+__TCM_FILE_HASH__ = "message_sender00001"
 
 import asyncio
 import logging

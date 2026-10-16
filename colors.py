@@ -1,5 +1,5 @@
 
-__TCM_FILE_HASH__ = "4196404445"
+__TCM_FILE_HASH__ = "colors00001"
 
 class C:
     """ANSI color codes for terminal output."""

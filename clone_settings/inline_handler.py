@@ -1,6 +1,6 @@
 """Inline query handlers for the aiogram Clone Manager bot."""
 
-__TCM_FILE_HASH__ = "1416558874"
+__TCM_FILE_HASH__ = "clone_settings__inline_handler00001"
 
 
 import logging

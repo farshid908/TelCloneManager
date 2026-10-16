@@ -1,6 +1,6 @@
 """Session Settings menu with clone slot controls."""
 
-__TCM_FILE_HASH__ = "5952489061"
+__TCM_FILE_HASH__ = "clone_settings__menus__session_settings00001"
 
 
 from ..utils.keyboards import make_inline_keyboard
