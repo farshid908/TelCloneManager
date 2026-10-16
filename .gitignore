@@ -2,6 +2,7 @@
 __pycache__/
 *.py[codz]
 *$py.class
+/sessions/_send_progress.json
 
 # C extensions
 *.so

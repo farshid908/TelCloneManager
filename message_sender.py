@@ -8,7 +8,7 @@ Safe message sender with support for:
   - Bridge fallback for private users
 """
 
-__TCM_FILE_HASH__ = "message_sender00001"
+__TCM_FILE_HASH__ = "message_sender00002"
 
 import asyncio
 import logging
@@ -410,7 +410,9 @@ async def safe_send_message(
     click_chain_delay=None,
     return_message=False,
     on_sent=None,
+    on_actions_complete=None,
     click_reply_to_sent=False,
+    existing_message_id=None,
 ):
     """
     Send a text message with full feature support:
@@ -460,28 +462,49 @@ async def safe_send_message(
 
 
     sent_msg = None
-    for attempt in range(1, 4):
+    if existing_message_id is not None:
         try:
-            sent_msg = await client.send_message(entity, text, **kwargs)
-            logger.info(
-                f"[SEND] [{session_name}] ✓ Sent to "
-                f"'{chat_target.display_name}' (msg_id={sent_msg.id})"
+            sent_msg = await client.get_messages(
+                entity, ids=existing_message_id,
             )
-            break
-        except FloodWaitError as e:
-            logger.warning(f"[SEND] [{session_name}] FloodWait {e.seconds}s")
-            await asyncio.sleep(e.seconds + 1)
-        except (ChatWriteForbiddenError, UserBannedInChannelError,
-                UserIsBlockedError) as e:
-            logger.error(f"[SEND] [{session_name}] ✗ Permission: {e}")
-            return False
         except Exception as e:
-            logger.error(
-                f"[SEND] [{session_name}] ✗ Attempt {attempt}: "
-                f"{type(e).__name__}: {e}"
+            logger.warning(
+                "[SEND] [%s] Could not restore sent message %s: %s",
+                session_name, existing_message_id, e,
             )
-            if attempt < 3:
-                await asyncio.sleep(2)
+        if sent_msg is None:
+            logger.warning(
+                "[SEND] [%s] Saved sent message %s is unavailable",
+                session_name, existing_message_id,
+            )
+            return False
+        logger.info(
+            "[SEND] [%s] Resuming actions for saved message %s",
+            session_name, existing_message_id,
+        )
+    else:
+        for attempt in range(1, 4):
+            try:
+                sent_msg = await client.send_message(entity, text, **kwargs)
+                logger.info(
+                    f"[SEND] [{session_name}] ✓ Sent to "
+                    f"'{chat_target.display_name}' (msg_id={sent_msg.id})"
+                )
+                break
+            except FloodWaitError as e:
+                logger.warning(f"[SEND] [{session_name}] FloodWait {e.seconds}s")
+                await asyncio.sleep(e.seconds + 1)
+            except (ChatWriteForbiddenError, UserBannedInChannelError,
+                    UserIsBlockedError) as e:
+                logger.error(f"[SEND] [{session_name}] ✗ Permission: {e}")
+                return False
+            except Exception as e:
+                logger.error(
+                    f"[SEND] [{session_name}] ✗ Attempt {attempt}: "
+                    f"{type(e).__name__}: {e}"
+                )
+                if attempt < 3:
+                    await asyncio.sleep(2)
 
     if sent_msg is None:
         logger.error(f"[SEND] [{session_name}] ✗ All attempts failed")
@@ -493,12 +516,24 @@ async def safe_send_message(
         except Exception as e:
             logger.debug(f"[SEND] [{session_name}] Sent callback failed: {e}")
 
+    def _mark_actions_complete():
+        if on_actions_complete is None:
+            return
+        try:
+            on_actions_complete(sent_msg)
+        except Exception as e:
+            logger.debug(
+                "[SEND] [%s] Action-complete callback failed: %s",
+                session_name, e,
+            )
+
 
     if if_structure:
         await _handle_if_structure(
             client, chat_target.chat_id, session_name,
             sent_msg.id, if_structure,
         )
+        _mark_actions_complete()
         return sent_msg if return_message else True
 
 
@@ -540,4 +575,5 @@ async def safe_send_message(
                 reply_text=reply_text, session_name=session_name,
             )
 
+    _mark_actions_complete()
     return sent_msg if return_message else True

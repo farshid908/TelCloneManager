@@ -7,7 +7,7 @@ so they can be resumed after a restart (Ctrl+C, crash, or manual reload).
 State file: sessions/_runtime_state.json
 """
 
-__TCM_FILE_HASH__ = "state_persistence00001"
+__TCM_FILE_HASH__ = "state_persistence00002"
 
 
 import os
@@ -15,12 +15,14 @@ import json
 import time
 import tempfile
 import logging
+import copy
 from typing import Dict, List, Optional
 from threading import Lock
 
 logger = logging.getLogger("TG-Auto")
 
 STATE_FILE = "sessions/_runtime_state.json"
+SEND_PROGRESS_FILE = "sessions/_send_progress.json"
 
 _state_lock = Lock()
 _UNSET = object()
@@ -30,6 +32,8 @@ _current_state = {
     "hunt_clicks": {},
     "rep_jobs": {},
 }
+_bounded_send_jobs = {}
+_bounded_send_loaded = False
 
 
 
@@ -131,6 +135,150 @@ def init_state():
     
     
     save_state_to_disk()
+    load_bounded_sends_from_disk()
+
+
+def _save_bounded_sends_locked():
+    state_dir = os.path.dirname(SEND_PROGRESS_FILE) or "."
+    os.makedirs(state_dir, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(
+        prefix=".send_progress.", suffix=".tmp", dir=state_dir,
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(
+                {"version": 1, "jobs": _bounded_send_jobs},
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary, SEND_PROGRESS_FILE)
+        try:
+            dir_fd = os.open(state_dir, os.O_DIRECTORY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+        except OSError:
+            pass
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def load_bounded_sends_from_disk():
+    global _bounded_send_jobs, _bounded_send_loaded
+    with _state_lock:
+        if _bounded_send_loaded:
+            return copy.deepcopy(_bounded_send_jobs)
+        try:
+            with open(SEND_PROGRESS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            jobs = data.get("jobs", {}) if isinstance(data, dict) else {}
+            _bounded_send_jobs = jobs if isinstance(jobs, dict) else {}
+        except FileNotFoundError:
+            _bounded_send_jobs = {}
+        except Exception as e:
+            logger.error("[SEND-PROGRESS] Load failed: %s", e)
+            _bounded_send_jobs = {}
+        _bounded_send_loaded = True
+        return copy.deepcopy(_bounded_send_jobs)
+
+
+def register_bounded_send(job_id: str, info: Dict):
+    load_bounded_sends_from_disk()
+    checkpoint = copy.deepcopy(info)
+    now = time.time()
+    checkpoint.setdefault("started_at", now)
+    checkpoint["updated_at"] = now
+    checkpoint["checkpoint_at"] = now
+    try:
+        with _state_lock:
+            _bounded_send_jobs[str(job_id)] = checkpoint
+            _save_bounded_sends_locked()
+    except Exception as e:
+        logger.error("[SEND-PROGRESS] Register failed for %s: %s", job_id, e)
+    return str(job_id)
+
+
+def update_bounded_send(
+    job_id: str,
+    *,
+    sender_name: Optional[str] = None,
+    sender_changes: Optional[Dict] = None,
+    **changes,
+):
+    load_bounded_sends_from_disk()
+    try:
+        with _state_lock:
+            info = _bounded_send_jobs.get(str(job_id))
+            if info is None:
+                return
+            if sender_name is not None and sender_changes is not None:
+                sender_progress = info.setdefault("sender_progress", {})
+                sender_info = sender_progress.setdefault(sender_name, {})
+                sender_info.update(copy.deepcopy(sender_changes))
+                changes["completed"] = sum(
+                    int(item.get("completed", 0))
+                    for item in sender_progress.values()
+                )
+            info.update(copy.deepcopy(changes))
+            now = time.time()
+            info["updated_at"] = now
+            info["checkpoint_at"] = now
+            _save_bounded_sends_locked()
+    except Exception as e:
+        logger.error("[SEND-PROGRESS] Update failed for %s: %s", job_id, e)
+
+
+def get_all_bounded_sends() -> Dict:
+    load_bounded_sends_from_disk()
+    with _state_lock:
+        return copy.deepcopy(_bounded_send_jobs)
+
+
+def unregister_bounded_send(job_id: str):
+    load_bounded_sends_from_disk()
+    try:
+        with _state_lock:
+            _bounded_send_jobs.pop(str(job_id), None)
+            _save_bounded_sends_locked()
+    except Exception as e:
+        logger.error("[SEND-PROGRESS] Remove failed for %s: %s", job_id, e)
+
+
+def unregister_bounded_sends_for_text(chat_id: int, text: str) -> int:
+    load_bounded_sends_from_disk()
+    try:
+        with _state_lock:
+            matching = [
+                job_id for job_id, info in _bounded_send_jobs.items()
+                if info.get("source_chat_id") == chat_id
+                and info.get("text") == text
+            ]
+            for job_id in matching:
+                del _bounded_send_jobs[job_id]
+            if matching:
+                _save_bounded_sends_locked()
+            return len(matching)
+    except Exception as e:
+        logger.error("[SEND-PROGRESS] Remove by text failed: %s", e)
+        return 0
+
+
+def unregister_all_bounded_sends() -> int:
+    load_bounded_sends_from_disk()
+    try:
+        with _state_lock:
+            count = len(_bounded_send_jobs)
+            _bounded_send_jobs.clear()
+            _save_bounded_sends_locked()
+            return count
+    except Exception as e:
+        logger.error("[SEND-PROGRESS] Clear all failed: %s", e)
+        return 0
 
 
 
@@ -495,4 +643,5 @@ def clear_all_state():
             "rep_jobs": {},
         }
     save_state_to_disk()
+    unregister_all_bounded_sends()
     logger.warning("[STATE] All state cleared!")

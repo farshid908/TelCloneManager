@@ -4,7 +4,7 @@ Stops specific loops or all loops.
 Also removes from state persistence so they don't resume after restart.
 """
 
-__TCM_FILE_HASH__ = "handlers__stop_handler00002"
+__TCM_FILE_HASH__ = "handlers__stop_handler00003"
 
 
 import logging
@@ -13,7 +13,11 @@ from telethon import events
 
 from command_parser import parse_stop_command
 from loop_manager import make_loop_key
-from state_persistence import unregister_loop
+from state_persistence import (
+    unregister_loop,
+    unregister_bounded_sends_for_text,
+    unregister_all_bounded_sends,
+)
 
 logger = logging.getLogger("TG-Auto")
 
@@ -55,9 +59,12 @@ def register_stop_handler(automation):
         
         try:
             unregister_loop(event.chat_id, stop_text)
+            removed_sends = unregister_bounded_sends_for_text(
+                event.chat_id, stop_text,
+            )
             logger.info(
                 f"[STOP] Removed from state: chat={event.chat_id} "
-                f'text="{stop_text}"'
+                f'text="{stop_text}"; saved send jobs={removed_sends}'
             )
         except Exception as e:
             logger.error(f"[STOP] State unregister failed: {e}")
@@ -90,15 +97,8 @@ def register_stop_handler(automation):
         if not automation.is_admin(event):
             return
 
-        if not automation.loops.active:
-            await event.reply("ℹ️ No active loops.")
-            return
-
-        
         all_keys = list(automation.loops.active.keys())
-
-        
-        count = await automation.loops.cancel_all()
+        count = await automation.loops.cancel_all() if all_keys else 0
 
         
         for key in all_keys:
@@ -107,6 +107,18 @@ def register_stop_handler(automation):
             except Exception as e:
                 logger.error(f"[STOPALL] State unregister failed: {e}")
 
-        logger.info(f"[STOPALL] Stopped {count} loop(s) and cleared state")
+        saved_count = unregister_all_bounded_sends()
 
-        await event.reply(f"🛑 Stopped **{count}** loop(s) globally.")
+        if not count and not saved_count:
+            await event.reply("ℹ️ No active loops.")
+            return
+
+        logger.info(
+            f"[STOPALL] Stopped {count} loop(s) and cleared "
+            f"{saved_count} saved send job(s)"
+        )
+
+        await event.reply(
+            f"🛑 Stopped **{count}** loop(s) and cleared "
+            f"**{saved_count}** saved send job(s) globally."
+        )
