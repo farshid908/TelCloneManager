@@ -13,7 +13,7 @@ Supports all commands including:
     del, list, Dclick inside send, direct click, react with link
 """
 
-__TCM_FILE_HASH__ = "3781329885"
+__TCM_FILE_HASH__ = "5827401936"
 
 
 import re
@@ -23,12 +23,8 @@ from typing import Dict, List, Optional
 logger = logging.getLogger("TG-Auto")
 
 
-
-
-
-
 SEND_BASIC = re.compile(
-    r"""^send(?:\((?P<clones>[^)]+)\))?\s+(?P<q>["'])(?P<text>.+?)(?P=q)(?P<rest>.*)""",
+    r"""^send(?P<count>\d+)?(?:\((?P<clones>[^)]+)\))?\s+(?P<q>["'])(?P<text>.+?)(?P=q)(?P<rest>.*)""",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -180,10 +176,6 @@ AT_USERNAME_PATTERN = re.compile(
 )
 
 
-
-
-
-
 def parse_clone_selector(raw):
     if not raw or not raw.strip():
         return None
@@ -213,10 +205,6 @@ def parse_clone_selector(raw):
             seen.add(idx)
             unique.append(idx)
     return unique if unique else None
-
-
-
-
 
 
 def parse_actions(text):
@@ -320,8 +308,6 @@ def parse_if_structure(rest):
     return None
 
 
-
-
 def parse_send_command(raw):
     m = SEND_BASIC.match(raw.strip())
     if not m:
@@ -330,6 +316,9 @@ def parse_send_command(raw):
     text = m.group("text")
     rest = (m.group("rest") or "").strip()
     clones_raw = m.group("clones")
+    send_count = int(m.group("count")) if m.group("count") else None
+    if send_count is not None and send_count < 1:
+        return None
 
     if_struct = parse_if_structure(rest)
 
@@ -362,9 +351,7 @@ def parse_send_command(raw):
     if mf:
         include_me = mf.group("flag").lower() == "+me"
 
-    
-    
-    
+
     click_for_delay = CLICK_PATTERN.search(outer_flags)
     for df in DELAY_PATTERN.finditer(outer_flags):
         if click_for_delay and (
@@ -413,6 +400,7 @@ def parse_send_command(raw):
 
     return {
         "text": text,
+        "send_count": send_count,
         "include_me": include_me,
         "delay": delay,
         "loop_interval": loop_interval,
@@ -475,8 +463,8 @@ def parse_rep_command(raw):
     if mode == "reploop" and batch is None:
         batch = "1"
     if mode == "repall":
-        
-        
+
+
         batch = batch or "1"
 
     def normalize_account(value):
@@ -490,14 +478,14 @@ def parse_rep_command(raw):
     delay_value = int(delay) if delay is not None else (0 if has_reply_chain else None)
     if timeout is not None:
         timeout_value = int(timeout)
-        
-        
+
+
     elif has_reply_chain and delay is not None:
-        
-        
+
+
         timeout_value = 10
     else:
-        
+
         timeout_value = 0 if has_reply_chain else None
 
     return {
@@ -522,16 +510,12 @@ def parse_rep_command(raw):
             normalize_account(match.group("reply_account"))
             if match.group("reply_account") is not None else None
         ),
-        
-        
+
+
         "reply_sender_id": int(reply_chat_id) if reply_chat_id is not None else None,
         "line": int(re.search(r"\d+", match.group("line")).group())
         if match.group("line") else None,
     }
-
-
-
-
 
 
 def parse_hunt_click_command(raw):
@@ -586,10 +570,6 @@ def parse_stop_click_command(raw):
     return {"button_text": button.strip() if button else None}
 
 
-
-
-
-
 def parse_direct_click_command(raw):
     m = DIRECT_CLICK_PATTERN.match(raw.strip())
     if not m:
@@ -622,10 +602,6 @@ def parse_direct_click_command(raw):
         "username": username,
         "msg_id": msg_id,
     }
-
-
-
-
 
 
 def parse_react_command(raw):
@@ -689,10 +665,6 @@ def parse_react_with_link_command(raw):
     }
 
 
-
-
-
-
 def parse_show_prof_command(raw):
     m = SHOW_PROF_PATTERN.match(raw.strip())
     if not m:
@@ -717,7 +689,7 @@ def parse_show_prof_command(raw):
         "action": action,
         "scope": scope,
         "targets": targets,
-        
+
         "usernames": [
             target.lstrip("@")
             for target in targets
@@ -734,10 +706,6 @@ def parse_prof_hideall_command(raw):
     return bool(PROF_HIDEALL_PATTERN.match(raw.strip()))
 
 
-
-
-
-
 def parse_set_prof_command(raw):
     m = SET_PROF_PATTERN.match(raw.strip())
     if not m:
@@ -745,10 +713,6 @@ def parse_set_prof_command(raw):
     rest = (m.group("rest") or "").strip()
     no_watermark = bool(NOWATER_FLAG_PATTERN.search(rest))
     return {"no_watermark": no_watermark}
-
-
-
-
 
 
 def parse_save_media_command(raw):
@@ -808,17 +772,9 @@ def parse_list_media_command(raw):
     return {"media_type": None if t == "all" else t}
 
 
-
-
-
-
 def parse_stop_command(raw):
     m = STOP_PATTERN.match(raw.strip())
     return m.group("text") if m else None
-
-
-
-
 
 
 def extract_join_target(text):

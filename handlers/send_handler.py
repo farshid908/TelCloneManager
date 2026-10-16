@@ -2,7 +2,7 @@
 Send command handler with state persistence, bridge fallback, and Dclick support.
 """
 
-__TCM_FILE_HASH__ = "8132661501"
+__TCM_FILE_HASH__ = "4691358270"
 
 
 import asyncio
@@ -64,8 +64,8 @@ async def _edit_status(message, text):
     try:
         await message.edit(text)
     except Exception as e:
-        
-        
+
+
         logger.debug(f"[SEND] Status edit skipped: {e}")
 
 
@@ -90,6 +90,8 @@ def _select_clones(all_clients, all_names, clone_indices):
 
 def _build_flags_display(parsed):
     flags = ["+me" if parsed["include_me"] else "-me", f"/{parsed['delay']}"]
+    if parsed.get("send_count") is not None:
+        flags.insert(0, f"send{parsed['send_count']}")
     if parsed["loop_interval"]:
         flags.append(f"loop{parsed['loop_interval']}")
     if parsed.get("rep_chat_id") is not None:
@@ -136,7 +138,7 @@ def register_send_handler(automation):
     aid = automation._admin_user_id
 
     @automation.main_client.on(events.NewMessage(
-        pattern=r"""^send[\s(]""", from_users=aid,
+        pattern=r"""^send\d*[\s(]""", from_users=aid,
     ))
     async def _send(event):
         if not automation.is_admin(event):
@@ -153,6 +155,7 @@ def register_send_handler(automation):
         )
 
         text = parsed["text"]
+        send_count = parsed.get("send_count")
         include_me = parsed["include_me"]
         delay = parsed["delay"]
         loop_interval = parsed["loop_interval"]
@@ -166,8 +169,8 @@ def register_send_handler(automation):
         if_structure = parsed["if_structure"]
         dclick_text = parsed.get("dclick_text")
         dclick_delay = parsed.get("dclick_delay", 0)
-        
-        
+
+
         reply_to = event.reply_to_msg_id if event.is_reply else None
 
         selected_clients, selected_names = _select_clones(
@@ -193,18 +196,21 @@ def register_send_handler(automation):
         ]
         if reply_to:
             reply_lines.append("Reply   : enabled")
+        if send_count is not None:
+            reply_lines.append(f"Repeat  : {send_count} send(s) per sender")
 
         if if_structure:
             reply_lines.extend(_build_if_display(if_structure))
-        if loop_interval:
+        if loop_interval is not None:
             reply_lines.append(
                 f"🔁 Loop   : every {loop_interval}s "
                 f"(stop with `stop \"{text}\"`)"
             )
         initial_status_text = "\n".join(reply_lines)
+        if send_count is not None and loop_interval is not None:
+            initial_status_text += "\nTimer starts separately after each sender's message."
 
-        
-        
+
         edited_command = False
         try:
             reply_msg = await event.edit(initial_status_text)
@@ -214,8 +220,8 @@ def register_send_handler(automation):
             reply_msg = await event.reply(initial_status_text)
 
         if no_trace:
-            
-            
+
+
             msgs_to_delete = []
             if reply_msg:
                 msgs_to_delete.append(reply_msg.id)
@@ -230,6 +236,7 @@ def register_send_handler(automation):
 
         params = {
             "text": text,
+            "send_count": send_count,
             "include_me": include_me,
             "delay": delay,
             "loop_interval": loop_interval,
@@ -249,10 +256,32 @@ def register_send_handler(automation):
             ),
         }
 
-        if loop_interval is not None:
+        key = make_loop_key(event.chat_id, text)
+        if send_count is not None:
+            await automation.loops.cancel_by_key(key)
+            unregister_loop(event.chat_id, text)
+            task = asyncio.create_task(
+                _execute_bounded_sends(
+                    automation, key, chat_target, text, send_count,
+                    include_me, delay, loop_interval,
+                    selected_clients=selected_clients,
+                    selected_names=selected_names,
+                    reply_to=reply_to,
+                    button_text=button_text,
+                    click_chain_delay=click_chain_delay,
+                    reply_text=reply_text,
+                    if_structure=if_structure,
+                    dclick_text=dclick_text,
+                    dclick_delay=dclick_delay,
+                    rep_chat_id=rep_chat_id,
+                    reply_timeout=reply_timeout,
+                    status_message=reply_msg,
+                )
+            )
+            await automation.loops.register(key, task)
+        elif loop_interval is not None:
             register_loop(event.chat_id, text, params)
 
-            key = make_loop_key(event.chat_id, text)
             task = asyncio.create_task(
                 _send_loop(
                     automation, key, chat_target,
@@ -295,6 +324,155 @@ def register_send_handler(automation):
             )
 
 
+async def _execute_bounded_sends(
+    automation,
+    key,
+    chat_target,
+    text,
+    send_count,
+    include_me,
+    delay,
+    loop_interval,
+    selected_clients,
+    selected_names,
+    reply_to=None,
+    button_text=None,
+    click_chain_delay=None,
+    reply_text=None,
+    if_structure=None,
+    dclick_text=None,
+    dclick_delay=0,
+    rep_chat_id=None,
+    reply_timeout=None,
+    status_message=None,
+):
+    senders = []
+    if include_me:
+        senders.append((automation.main_client, "Main"))
+    senders.extend(zip(selected_clients, selected_names))
+    total = send_count * len(senders)
+    completed = 0
+    failed_names = set()
+    progress_lock = asyncio.Lock()
+
+    async def _send_one(client, name, on_first_send=None):
+        sent_at = {}
+
+        def _mark_sent(_message):
+            sent_at["value"] = time.monotonic()
+            if on_first_send is not None:
+                on_first_send()
+
+        is_main = client is automation.main_client
+        try:
+            await _execute_send_with_state(
+                automation,
+                chat_target,
+                text,
+                is_main,
+                0,
+                reply_to=reply_to,
+                button_text=button_text,
+                click_chain_delay=click_chain_delay,
+                reply_text=reply_text,
+                if_structure=if_structure,
+                selected_clients=[] if is_main else [client],
+                selected_names=[] if is_main else [name],
+                dclick_text=dclick_text,
+                dclick_delay=dclick_delay,
+                rep_chat_id=rep_chat_id,
+                reply_timeout=reply_timeout,
+                on_sent=_mark_sent,
+                click_reply_to_sent=bool(button_text),
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.error("[SEND10] [%s] Send failed: %s", name, e)
+            return None
+        if "value" not in sent_at:
+            logger.warning("[SEND10] [%s] Message was not sent", name)
+            return None
+        return sent_at["value"]
+
+    async def _record_success(name, round_number):
+        nonlocal completed
+        async with progress_lock:
+            completed += 1
+            logger.info(
+                "[SEND10] %s sent %s/%s (%s/%s total)",
+                name, round_number, send_count, completed, total,
+            )
+
+    first_send_events = [asyncio.Event() for _ in senders]
+
+    async def _run_sender(client, name, sender_index):
+        if sender_index:
+            await first_send_events[sender_index - 1].wait()
+            if delay:
+                await asyncio.sleep(delay)
+        for round_number in range(1, send_count + 1):
+            sent_at = await _send_one(
+                client,
+                name,
+                first_send_events[sender_index].set
+                if round_number == 1 else None,
+            )
+            if sent_at is None:
+                first_send_events[sender_index].set()
+                failed_names.add(name)
+                return
+            await _record_success(name, round_number)
+            if round_number < send_count:
+                due_at = sent_at + max(1, int(loop_interval))
+                await asyncio.sleep(max(0, due_at - time.monotonic()))
+
+    try:
+        if not senders:
+            await _edit_status(status_message, "No selected senders are available.")
+            return
+
+        if loop_interval is not None:
+            await asyncio.gather(*(
+                _run_sender(client, name, index)
+                for index, (client, name) in enumerate(senders)
+            ))
+        else:
+            planned = [
+                (client, name, round_number)
+                for round_number in range(1, send_count + 1)
+                for client, name in senders
+            ]
+            for index, (client, name, round_number) in enumerate(planned):
+                if name not in failed_names:
+                    sent_at = await _send_one(client, name)
+                    if sent_at is None:
+                        failed_names.add(name)
+                    else:
+                        await _record_success(name, round_number)
+                if delay and index < len(planned) - 1:
+                    await asyncio.sleep(delay)
+
+        if failed_names:
+            failed = ", ".join(sorted(failed_names))
+            result = f"Finished {completed}/{total}; failed sender(s): {failed}."
+        else:
+            result = f"Completed {completed}/{total} sends."
+        await _edit_status(status_message, f"✅ {result}")
+    except asyncio.CancelledError:
+        await _edit_status(
+            status_message, f"🛑 Stopped after {completed}/{total} sends."
+        )
+        raise
+    except Exception as e:
+        logger.error("[SEND10] Job failed: %s", e, exc_info=True)
+        await _edit_status(
+            status_message, f"⚠️ Send job stopped after {completed}/{total}."
+        )
+    finally:
+        automation.loops.remove(key)
+
+
 async def _execute_send_with_state(
     automation,
     chat_target,
@@ -319,6 +497,8 @@ async def _execute_send_with_state(
     sender_order=None,
     rep_chat_id=None,
     reply_timeout=None,
+    on_sent=None,
+    click_reply_to_sent=False,
 ):
     clone_clients = (
         selected_clients if selected_clients is not None
@@ -382,6 +562,10 @@ async def _execute_send_with_state(
             if_structure=if_structure,
             dclick_text=dclick_text,
             dclick_delay=dclick_delay,
+            status_message=status_message,
+            initial_status_text=initial_status_text,
+            on_sent=on_sent,
+            click_reply_to_sent=click_reply_to_sent,
         )
         if seq_id:
             unregister_sequential(seq_id)
@@ -390,7 +574,7 @@ async def _execute_send_with_state(
     bridge_id = BRIDGE_GROUP
     identity_cache = {}
 
-    
+
     effective_target = chat_target.send_target
     if clone_clients:
         try:
@@ -423,6 +607,8 @@ async def _execute_send_with_state(
                 override_target=effective_target,
                 dclick_text=dclick_text,
                 dclick_delay=dclick_delay,
+                on_sent=on_sent,
+                click_reply_to_sent=click_reply_to_sent,
             )
 
         tasks = [
@@ -476,12 +662,11 @@ async def _execute_send_with_state(
                     dclick_text=dclick_text,
                     dclick_delay=dclick_delay,
                     return_message=loop_id is not None,
+                    on_sent=on_sent,
+                    click_reply_to_sent=click_reply_to_sent,
                 )
 
-            
-            
-            
-            
+
             if button_text and len(senders) > 1:
                 pending = []
                 for i, (c, n) in enumerate(senders):
@@ -597,8 +782,8 @@ async def _send_loop(
     resume_current_cycle = persisted.get("phase") not in {
         None, "scheduled", "cycle_completed"
     }
-    
-    
+
+
     sleep_interval = max(1, int(loop_interval or 0))
     try:
         while True:
@@ -674,10 +859,8 @@ async def _send_loop(
                     "[LOOP] Reply-chain timing is per sender; next due time "
                     "is managed by the chain scheduler"
                 )
-                
-                
-                
-                
+
+
                 logger.info(
                     f"[LOOP] Reply chain complete; sleeping {sleep_interval}s…"
                 )
@@ -688,23 +871,17 @@ async def _send_loop(
         )
     except Exception as e:
         logger.error(f"[LOOP] ✗ Error: {e}")
-        
-        
-        
+
+
         unregister_loop(chat_id, text)
     finally:
         automation.loops.remove(key)
 
 
-
-
-
-
 async def resume_all_loops(automation):
     from state_persistence import get_all_loops
 
-    
-    
+
     resume_lock = getattr(automation, "_loop_resume_lock", None)
     if resume_lock is None:
         resume_lock = asyncio.Lock()
@@ -730,9 +907,7 @@ async def resume_all_loops(automation):
                 next_at = info.get("next_iteration_at", now)
                 key = make_loop_key(chat_id, text)
 
-                
-                
-                
+
                 if automation.loops.is_active(key):
                     logger.warning(
                         f'[RESUME] Skipping duplicate active loop: '
@@ -746,10 +921,8 @@ async def resume_all_loops(automation):
                         f"[RESUME] Loop \"{text}\" overdue "
                         f"{-time_until_next:.0f}s — delaying one full interval"
                     )
-                    
-                    
-                    
-                    
+
+
                     initial_sleep = max(0, params.get("loop_interval", 0))
                 else:
                     initial_sleep = time_until_next
@@ -816,6 +989,10 @@ async def _execute_reply_chain_loop(
     if_structure=None,
     dclick_text=None,
     dclick_delay=0,
+    status_message=None,
+    initial_status_text=None,
+    on_sent=None,
+    click_reply_to_sent=False,
 ):
     """Send one reply-triggered chain iteration.
 
@@ -853,9 +1030,8 @@ async def _execute_reply_chain_loop(
             logger.error("[SEND] Reply-chain bridge failed: %s", exc)
 
     for index, (client, name) in enumerate(senders):
-        
-        
-        
+
+
         reply_event = asyncio.Event()
         pending_reply_ids = []
         reply_handler = _make_designated_reply_handler(
@@ -884,6 +1060,8 @@ async def _execute_reply_chain_loop(
                 all_clone_names=names,
                 override_target=effective_target,
                 return_message=True,
+                on_sent=on_sent,
+                click_reply_to_sent=click_reply_to_sent,
             )
             if sent is False or sent is None:
                 logger.warning(
@@ -892,8 +1070,7 @@ async def _execute_reply_chain_loop(
                 )
                 return
 
-            
-            
+
             reply_handler.reply_to_id = sent.id
             if sent.id in pending_reply_ids:
                 reply_event.set()
@@ -959,11 +1136,7 @@ async def resume_all_sequentials(automation):
         logger.info("[RESUME] No sequential sends to resume")
         return
 
-    
-    
-    
-    
-    
+
     stale_count = len(sequentials)
     for seq_id in sequentials:
         unregister_sequential(seq_id)
