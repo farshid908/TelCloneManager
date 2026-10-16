@@ -2,7 +2,7 @@
 Send command handler with state persistence, bridge fallback, and Dclick support.
 """
 
-__TCM_FILE_HASH__ = "handlers__send_handler00004"
+__TCM_FILE_HASH__ = "handlers__send_handler00005"
 
 
 import asyncio
@@ -78,6 +78,21 @@ def _append_status_result(initial_status_text, result_text):
     if not initial_status_text:
         return result_text
     return f"{initial_status_text.rstrip()}\n{result_text}"
+
+
+def _deduplicate_command_echo(raw_text):
+    lines = (raw_text or "").strip().splitlines()
+    result = []
+    seen_commands = set()
+    for line in lines:
+        normalized = line.strip()
+        is_send_command = normalized.lower().startswith("send") and "(" in normalized
+        if is_send_command and normalized in seen_commands:
+            continue
+        if is_send_command:
+            seen_commands.add(normalized)
+        result.append(line)
+    return "\n".join(result).strip()
 
 
 def _select_clones(all_clients, all_names, clone_indices):
@@ -217,11 +232,14 @@ def register_send_handler(automation):
                 f"🔁 Loop   : every {loop_interval}s "
                 f"(stop with `stop \"{text}\"`)"
             )
-        initial_status_text = "\n".join(reply_lines)
+        base_status_text = "\n".join(reply_lines)
         if send_count is not None and loop_interval is not None:
-            initial_status_text += "\nTimer starts separately after each sender's message."
+            base_status_text += "\nTimer starts separately after each sender's message."
+        initial_status_text = base_status_text
         if send_count is not None:
-            initial_status_text += f"\n\n{event.raw_text.strip()}"
+            command_echo = _deduplicate_command_echo(event.raw_text)
+            if command_echo:
+                initial_status_text += f"\n\n{command_echo}"
 
 
         edited_command = False
@@ -230,6 +248,7 @@ def register_send_handler(automation):
             edited_command = True
         except Exception as e:
             logger.debug(f"[SEND] Could not edit command message: {e}")
+            initial_status_text = base_status_text
             reply_msg = await event.reply(initial_status_text)
 
         if no_trace:
