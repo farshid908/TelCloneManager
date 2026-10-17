@@ -2,7 +2,7 @@
 Send command handler with state persistence, bridge fallback, and Dclick support.
 """
 
-__TCM_FILE_HASH__ = "handlers__send_handler00007"
+__TCM_FILE_HASH__ = "handlers__send_handler00008"
 
 
 import asyncio
@@ -796,8 +796,7 @@ async def _execute_bounded_sends(
                 else:
                     _persist(next_index=index + 1, next_send_at=0)
                 if delay and index < len(planned) - 1:
-                    next_due = float(progress_state.get("next_send_at", 0) or 0)
-                    await asyncio.sleep(max(0, next_due - time.time()))
+                    await asyncio.sleep(delay)
 
         if failed_names:
             failed = ", ".join(sorted(failed_names))
