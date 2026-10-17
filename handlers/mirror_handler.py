@@ -1,5 +1,5 @@
 
-__TCM_FILE_HASH__ = "handlers__mirror_handler00001"
+__TCM_FILE_HASH__ = "handlers__mirror_handler00002"
 
 import asyncio
 import logging
@@ -7,6 +7,7 @@ import logging
 from telethon import TelegramClient, events
 
 from config import BRIDGE_GROUP, AUTO_DELETE_DELAY
+from command_parser import parse_send_command
 from entity_resolver import ChatTarget, auto_extract_chat_target, resolve_entity
 from message_sender import safe_send_message
 
@@ -198,7 +199,14 @@ def register_mirror_handler(automation):
             logger.debug("[MIRROR] Ignoring message sent to Clone Manager bot")
             return
 
-        raw = (event.raw_text or "").strip().lower()
+        command_text = (
+            getattr(event, "_tg_original_command", None)
+            or event.raw_text
+            or ""
+        )
+        if parse_send_command(command_text):
+            return
+        raw = command_text.strip().lower()
         skip_prefixes = (
             "/go", "send ", "mirror ", "stop", "/status",
         )

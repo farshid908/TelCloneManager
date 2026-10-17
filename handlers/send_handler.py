@@ -2,13 +2,15 @@
 Send command handler with state persistence, bridge fallback, and Dclick support.
 """
 
-__TCM_FILE_HASH__ = "handlers__send_handler00006"
+__TCM_FILE_HASH__ = "handlers__send_handler00007"
 
 
 import asyncio
 import hashlib
 import logging
+import sqlite3
 import time
+from pathlib import Path
 from typing import List, Optional, Tuple
 
 from telethon import TelegramClient, events
@@ -36,6 +38,46 @@ from state_persistence import (
 logger = logging.getLogger("TG-Auto")
 
 NO_TRACE_DELETE_DELAY = 5.0
+SEND_EVENT_DB_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "sessions"
+    / "_send_event_claims.sqlite3"
+)
+SEND_EVENT_CLAIM_TTL = 30 * 24 * 60 * 60
+
+
+def _claim_send_event(event):
+    try:
+        SEND_EVENT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(SEND_EVENT_DB_PATH, timeout=15) as db:
+            db.execute("PRAGMA busy_timeout = 15000")
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS send_event_claims ("
+                "sender_id INTEGER NOT NULL, "
+                "chat_id INTEGER NOT NULL, "
+                "message_id INTEGER NOT NULL, "
+                "claimed_at REAL NOT NULL, "
+                "PRIMARY KEY (sender_id, chat_id, message_id))"
+            )
+            cursor = db.execute(
+                "INSERT OR IGNORE INTO send_event_claims "
+                "(sender_id, chat_id, message_id, claimed_at) "
+                "VALUES (?, ?, ?, ?)",
+                (
+                    int(event.sender_id or 0),
+                    int(event.chat_id),
+                    int(event.id),
+                    time.time(),
+                ),
+            )
+            db.execute(
+                "DELETE FROM send_event_claims WHERE claimed_at < ?",
+                (time.time() - SEND_EVENT_CLAIM_TTL,),
+            )
+            return cursor.rowcount == 1
+    except Exception as exc:
+        logger.error("[SEND] Could not claim command event: %s", exc)
+        return False
 
 
 async def _render_sender_text(client, text, identity_cache):
@@ -157,6 +199,13 @@ def register_send_handler(automation):
 
         parsed = parse_send_command(event.raw_text)
         if not parsed:
+            return
+        if not _claim_send_event(event):
+            logger.info(
+                "[SEND] Ignoring duplicate event: chat=%s message=%s",
+                event.chat_id,
+                event.id,
+            )
             return
 
         chat_target = await auto_extract_chat_target(

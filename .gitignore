@@ -3,6 +3,7 @@ __pycache__/
 *.py[codz]
 *$py.class
 /sessions/_send_progress.json
+/sessions/_send_event_claims.sqlite3*
 
 # C extensions
 *.so
